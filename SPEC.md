@@ -20,37 +20,64 @@ This specification deliberately sits between the Link Shelf MVP and FinAlly. Kee
 
 ## 3. Project layout
 
-All application code lives under `taskboard/` and is the only application root:
+The directory containing this `SPEC.md` is the rig/repository root.
+`taskboard/` is the single Python project and workflow layout root. It contains
+the package source, project metadata, documentation, tests, and Playwright
+harness:
 
 ```text
 SPEC.md
-README.md
-.gitignore
-pyproject.toml
 taskboard/
+  pyproject.toml
+  README.md
+  .gitignore
   __init__.py
   main.py                 # create_app(db_path=None) and route registration
   db.py                   # connect, init_schema, DB path handling
   models.py               # validation and mapping helpers
   repository.py           # SQLite queries for projects and tasks
+  package.json
+  package-lock.json
   templates/
     index.html
   static/
     app.js
     style.css
-  playwright.config.ts
+  playwright/
+    taskboard.spec.ts
   tests/
     conftest.py
     test_repository.py
     test_api.py
     test_ui_content.py
-    playwright/
-      taskboard.spec.ts
 ```
 
-The repository root is the Python project root; `taskboard/` is the importable Python package, and all test and browser-test files live under `taskboard/tests/`. Run project commands from the repository root. Tests import `create_app` from `taskboard.main`. Put all table DDL in `db.py`, all SQL data access in `repository.py`, all HTTP routes in `main.py`, and all browser interactions in `static/app.js`. `models.py` holds shared pure validation functions and row-to-JSON mapping helpers. Avoid circular imports.
+```
 
-Playwright scaffolding files (`package.json` when required by the host setup, `taskboard/playwright.config.ts`, and `taskboard/tests/playwright/*.spec.ts`) may be created by the Gas Town rig integration-test scaffolder. If generated, keep them; do not overwrite generated configurations unnecessarily. If not generated, create minimal compatible Playwright files when the browser-test phase begins. Do not create a second, containerized application.
+All paths in this specification are relative to the rig/repository root; run
+project commands from `taskboard/`. Do not create another Python project at the
+repository root. Configure the editable package so `taskboard.main` imports
+correctly from the `taskboard/` working directory during tests and from the
+repository root when starting the documented server command. Application code
+lives under `taskboard/`; unit and browser tests live under
+`taskboard/tests/`. Tests import `create_app` from `taskboard.main`. Put all
+table DDL in `db.py`, all SQL data access in `repository.py`, all HTTP routes in
+`main.py`, and all browser interactions in `static/app.js`. `models.py` holds
+shared pure validation functions and row-to-JSON mapping helpers. Configure
+setuptools to map the `taskboard` package to the project root and include
+`templates/*.html` and `static/*` as package data. Avoid circular imports.
+
+The only canonical Playwright paths are
+`taskboard/playwright.config.ts` and
+`taskboard/playwright/taskboard.spec.ts`. A host integration-test
+scaffolder may seed these files, but Phase 3 must leave a
+`taskboard/package.json` with `@playwright/test` as a development dependency
+and a matching `taskboard/package-lock.json`. They are test-runner files only:
+do not add application build scripts, duplicate config/spec files, path
+aliases, symlinks, or wrapper deliverables to satisfy a generated profile.
+Preserve a generated canonical config when present; otherwise create the
+minimal compatible config in Phase 3. Do not create a second, containerized
+application.
 
 ## 4. Data model and invariants
 
@@ -188,7 +215,7 @@ Write meaningful pytest tests. Use `tmp_path / "taskboard-test.db"` per test, an
 
 ### Browser E2E (Playwright)
 
-Minimum three scenarios, in `taskboard/tests/playwright/taskboard.spec.ts`:
+Minimum three scenarios, in `taskboard/playwright/taskboard.spec.ts`:
 
 1. First load displays the real TaskBoard heading and all three column headings.
 2. Create a project and task through the browser; verify task title in `To Do`; click `Move forward` and verify it appears in `Doing`; move again and verify `Done`; delete the task and verify it disappears.
@@ -202,13 +229,24 @@ Implement the following three phases in order. Each phase must leave a runnable,
 
 ### Phase 1 — Foundation and projects
 
-Required outputs: root `pyproject.toml`, package layout, `db.py`, project repository operations, `main.py` with `create_app`, health and project API routes, a real basic HTML page and static mounting, root README setup instructions, and foundational pytest tests. The HTML template and both static assets are created in this phase because `main.py` mounts and serves them; Phase 2 extends their behavior rather than introducing those prerequisites later.
+Required outputs: `taskboard/pyproject.toml`, package layout, `db.py`,
+project repository operations, `main.py` with `create_app`, health and project
+API routes, a real basic HTML page and static mounting, `taskboard/README.md`,
+and foundational pytest tests. The HTML template and both static assets are
+created in this phase because `main.py` mounts and serves them; Phase 2 extends
+their behavior rather than introducing those prerequisites later.
+
+Phase 1 owns `taskboard/pyproject.toml`, `taskboard/README.md`,
+`taskboard/.gitignore`, the package modules, the basic template/static assets,
+and `taskboard/tests/conftest.py`, `test_repository.py`, and `test_api.py`.
+These files are created once and may be extended in later phases.
 
 Exit criteria:
 
 ```bash
+cd taskboard
 python -m pip install -e '.[test]'
-python -m pytest -q taskboard/tests
+python -m pytest -q tests
 ```
 
 All Phase 1 tests pass; `GET /api/health` returns exact JSON; create/list/delete project works; GET `/` returns real HTML. No task UI required yet.
@@ -217,13 +255,22 @@ All Phase 1 tests pass; `GET /api/health` returns exact JSON; create/list/delete
 
 Required outputs: task repository operations, task API routes, validation, project selection, task creation/edit/delete, completed Kanban columns and move-forward behavior, and expanded pytest repository/API/UI-content coverage. Extend the Phase 1 template and static assets in place; do not introduce a second page or a new file layout.
 
-Exit criteria: `python -m pytest -q taskboard/tests` passes; a user can create a project and task, move it from todo to doing to done, edit it, and delete it via the real browser UI.
+Phase 2 adds `taskboard/tests/test_ui_content.py` and extends the Phase 1
+application and test files in place. Its outputs do not introduce duplicate
+copies or alternate paths for files already owned by Phase 1.
+
+Exit criteria: `cd taskboard && python -m pytest -q tests` passes; a user can create a project and task, move it from todo to doing to done, edit it, and delete it via the real browser UI.
 
 ### Phase 3 — Filters, browser tests, and release check
 
-Required outputs: status/priority filters, complete pytest coverage, Playwright scenarios under `taskboard/tests/playwright/`, README test and run instructions, and final smoke QA.
+Required outputs: status/priority filters, complete pytest coverage, Playwright scenarios under `taskboard/playwright/`, README test and run instructions, and final smoke QA.
 
-Exit criteria: `python -m pytest -q taskboard/tests` passes; `npx playwright test --config taskboard/playwright.config.ts taskboard/tests/playwright` passes with the server already running on `127.0.0.1:8080`; no features or dependencies outside this specification are introduced.
+Phase 3 adds `taskboard/package.json`, `taskboard/package-lock.json`,
+`taskboard/playwright.config.ts`, and
+`taskboard/playwright/taskboard.spec.ts`; it extends the existing UI, tests,
+and README at their canonical paths.
+
+Exit criteria: `cd taskboard && python -m pytest -q tests && npm install --ignore-scripts && npx playwright test --config playwright.config.ts playwright` passes with the server already running on `127.0.0.1:8080`; no features or dependencies outside this specification are introduced.
 
 ### Suggested bead decomposition (planner guidance)
 
@@ -255,17 +302,17 @@ This repository is an external test rig for the Gas Town `rig-flow` workflow, no
 - QA: smoke-test real API behavior and rendered browser content and report failures with the relevant file and bead ID.
 - If a verification step fails, repair within the current phase. Do not replace failed tests with assertions that merely check status 200 or placeholder content.
 
-Run all commands from the repository root. Phase verify command: `python -m pytest -q taskboard/tests` for Phases 1 and 2; for Phase 3, `python -m pytest -q taskboard/tests` plus `npx playwright test --config taskboard/playwright.config.ts taskboard/tests/playwright` against the already running server. A generated workflow profile must preserve these paths, phase IDs, and phase ordering; it must not assign files required by a phase to a later phase.
+Run all project commands from `taskboard/`. Phase verify command: `python -m pytest -q tests` for Phases 1 and 2; for Phase 3, `python -m pytest -q tests && npm install --ignore-scripts && npx playwright test --config playwright.config.ts playwright` against the already running server. A generated workflow profile must use the exact canonical paths above, preserve these phase IDs and ordering, assign each newly introduced deliverable to its first required phase, and not invent path aliases or move prerequisites to a later phase. If the profile disagrees with this SPEC, correct or regenerate the profile before design validation; do not change the architecture to match a conflicting profile.
 
 ## 10. Definition of done
 
-1. Fresh checkout with Python 3.11+ installs from the repository root with `python -m pip install -e '.[test]'`.
-2. `python -m pytest -q taskboard/tests` passes and asserts real domain state changes.
+1. Fresh checkout with Python 3.11+ installs from `taskboard/` with `python -m pip install -e '.[test]'`.
+2. `python -m pytest -q tests` passes from `taskboard/` and asserts real domain state changes.
 3. `python -m uvicorn taskboard.main:app --host 127.0.0.1 --port 8080` starts the web app with no environment keys or manual schema steps.
 4. GET `/` renders real UI, not a placeholder; static assets are accessible.
 5. Users can create/delete projects and create/edit/move/filter/delete tasks from the UI.
 6. Data persists across server restarts; deleting a project deletes its tasks.
-7. Browser E2E tests at `taskboard/tests/playwright/` pass against the running app; no E2E test depends on order or pre-existing projects.
+7. Browser E2E tests at `taskboard/playwright/` pass against the running app; no E2E test depends on order or pre-existing projects.
 8. The orchestrated workflow reports completion only after phase tests and final QA pass.
 
 ## 11. Explicitly out of scope

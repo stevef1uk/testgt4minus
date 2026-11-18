@@ -1,79 +1,84 @@
 {
   "version": 1,
-  "generated_at": "2026-11-18T09:23:21Z",
+  "generated_at": "2026-11-18T13:45:59Z",
   "source": "deterministic",
   "confidence": "high",
   "validation": {
     "layout_root": "taskboard",
     "bead_title_contains": "Implement taskboard/",
     "unittest_module": "",
-    "qa_verify_command": "cd taskboard && pytest",
+    "qa_verify_command": "cd taskboard && python -m pip install -e '.[test]' && python -m pytest -q tests",
     "test_runner": "pytest",
     "required_files": [
-      "taskboard/tests/pyproject.toml",
-      "taskboard/tests/test_api.py",
-      "taskboard/tests/test_repository.py",
-      "taskboard/tests/test_ui_content.py",
-      "taskboard/playwright.config.ts",
-      "taskboard/tests/playwright/**/*.spec.ts",
+      "taskboard/pyproject.toml",
+      "taskboard/README.md",
+      "taskboard/.gitignore",
       "taskboard/__init__.py",
       "taskboard/main.py",
       "taskboard/db.py",
       "taskboard/models.py",
       "taskboard/repository.py",
-      "taskboard/tests/conftest.py",
       "taskboard/templates/index.html",
       "taskboard/static/app.js",
-      "taskboard/static/style.css"
+      "taskboard/static/style.css",
+      "taskboard/tests/conftest.py",
+      "taskboard/tests/test_repository.py",
+      "taskboard/tests/test_api.py",
+      "taskboard/tests/test_ui_content.py",
+      "taskboard/package.json",
+      "taskboard/package-lock.json",
+      "taskboard/playwright.config.ts",
+      "taskboard/playwright/taskboard.spec.ts"
     ],
     "delivery_phases": [
-      {
-        "id": "filters-browser-tests-and-release-check",
-        "title": "Filters, browser tests, and release check",
-        "required_files": [
-          "taskboard/tests/pyproject.toml",
-          "taskboard/tests/test_api.py",
-          "taskboard/tests/test_repository.py",
-          "taskboard/tests/test_ui_content.py",
-          "taskboard/playwright.config.ts",
-          "taskboard/tests/playwright/**/*.spec.ts"
-        ],
-        "qa_verify_command": "cd taskboard && uvicorn main:app --host 127.0.0.1 --port 8080 & SERVER_PID=$! && sleep 3 && python -m pytest -q && npx playwright test && kill $SERVER_PID",
-        "spec_focus": "Filters, browser tests, and release check"
-      },
       {
         "id": "foundation-and-projects",
         "title": "Foundation and projects",
         "required_files": [
+          "taskboard/pyproject.toml",
+          "taskboard/README.md",
+          "taskboard/.gitignore",
           "taskboard/__init__.py",
           "taskboard/main.py",
           "taskboard/db.py",
           "taskboard/models.py",
           "taskboard/repository.py",
+          "taskboard/templates/index.html",
+          "taskboard/static/app.js",
+          "taskboard/static/style.css",
           "taskboard/tests/conftest.py",
-          "taskboard/tests/test_api.py",
-          "taskboard/tests/test_repository.py"
+          "taskboard/tests/test_repository.py",
+          "taskboard/tests/test_api.py"
         ],
-        "qa_verify_command": "cd taskboard && python -m pytest -v",
+        "qa_verify_command": "cd taskboard && python -m pip install -e '.[test]' && python -m pytest -q tests",
         "spec_focus": "Foundation and projects"
       },
       {
         "id": "tasks-and-kanban-ui",
         "title": "Tasks and Kanban UI",
         "required_files": [
-          "taskboard/templates/index.html",
-          "taskboard/static/app.js",
-          "taskboard/static/style.css",
           "taskboard/tests/test_ui_content.py"
         ],
-        "qa_verify_command": "cd taskboard && python -m pytest -v",
+        "qa_verify_command": "cd taskboard && python -m pytest -q tests",
         "spec_focus": "Tasks and Kanban UI"
+      },
+      {
+        "id": "filters-browser-tests-and-release-check",
+        "title": "Filters, browser tests, and release check",
+        "required_files": [
+          "taskboard/package.json",
+          "taskboard/package-lock.json",
+          "taskboard/playwright.config.ts",
+          "taskboard/playwright/taskboard.spec.ts"
+        ],
+        "qa_verify_command": "cd taskboard && python -m pytest -q tests && npm install --ignore-scripts && npx playwright test --config playwright.config.ts playwright",
+        "spec_focus": "Filters, browser tests, and release check"
       }
     ],
-    "active_phase_id": "filters-browser-tests-and-release-check",
+    "active_phase_id": "foundation-and-projects",
     "spec_summary": "",
-    "min_architecture_bytes": 3200,
-    "min_plan_bytes": 800,
+    "min_architecture_bytes": 4000,
+    "min_plan_bytes": 1000,
     "min_implementation_file_bytes": 400,
     "min_substantive_lines": 3,
     "min_test_plan_bytes": 400,
