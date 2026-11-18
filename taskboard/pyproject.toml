@@ -1,5 +1,21 @@
-pytest
-fastapi
-uvicorn
-jinja2
-httpx
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "taskboard"
+version = "0.1.0"
+description = "Local TaskBoard application"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "jinja2",
+    "httpx",
+]
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[tool.setuptools]
+packages = ["taskboard"]
