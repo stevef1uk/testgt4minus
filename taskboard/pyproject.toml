@@ -18,4 +18,4 @@ dependencies = [
 test = ["pytest"]
 
 [tool.setuptools]
-packages = ["taskboard"]
+py-modules = ["db", "models", "repository", "main"]
