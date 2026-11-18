@@ -300,6 +300,11 @@ This repository is an external test rig for the Gas Town `rig-flow` workflow, no
 - Polecat: implement and commit the actual code and tests; never mark a feature done without a runnable assertion.
 - Tester `test_review`: run the active-phase verify command and confirm the planned tests exist with substantive assertions.
 - QA: smoke-test real API behavior and rendered browser content and report failures with the relevant file and bead ID.
+- When `layout_root` is a subdirectory such as `taskboard`, paths in the
+  architecture's machine-readable `delivery_phases` ownership and
+  `file_dependencies` mappings must include that prefix (for example,
+  `taskboard/templates/index.html`). Assign every canonical profile deliverable
+  to its first phase; dependency keys must be owned by that phase.
 - If a verification step fails, repair within the current phase. Do not replace failed tests with assertions that merely check status 200 or placeholder content.
 
 Run all project commands from `taskboard/`. Phase verify command: `python -m pytest -q tests` for Phases 1 and 2; for Phase 3, `python -m pytest -q tests && npm install --ignore-scripts && npx playwright test --config playwright.config.ts playwright` against the already running server. A generated workflow profile must use the exact canonical paths above, preserve these phase IDs and ordering, assign each newly introduced deliverable to its first required phase, and not invent path aliases or move prerequisites to a later phase. If the profile disagrees with this SPEC, correct or regenerate the profile before design validation; do not change the architecture to match a conflicting profile.
