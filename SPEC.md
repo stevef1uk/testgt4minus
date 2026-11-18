@@ -26,6 +26,7 @@ All application code lives under `taskboard/` and is the only application root:
 SPEC.md
 README.md
 .gitignore
+pyproject.toml
 taskboard/
   __init__.py
   main.py                 # create_app(db_path=None) and route registration
@@ -37,17 +38,19 @@ taskboard/
   static/
     app.js
     style.css
-tests/
-  conftest.py
-  test_repository.py
-  test_api.py
-  test_ui_content.py
-pyproject.toml
+  playwright.config.ts
+  tests/
+    conftest.py
+    test_repository.py
+    test_api.py
+    test_ui_content.py
+    playwright/
+      taskboard.spec.ts
 ```
 
-The `taskboard` Python package contains all runtime files. Tests import `create_app` from `taskboard.main`. Put all table DDL in `db.py`, all SQL data access in `repository.py`, all HTTP routes in `main.py`, and all browser interactions in `static/app.js`. `models.py` holds shared pure validation functions and row-to-JSON mapping helpers. Avoid circular imports.
+The repository root is the Python project root; `taskboard/` is the importable Python package, and all test and browser-test files live under `taskboard/tests/`. Run project commands from the repository root. Tests import `create_app` from `taskboard.main`. Put all table DDL in `db.py`, all SQL data access in `repository.py`, all HTTP routes in `main.py`, and all browser interactions in `static/app.js`. `models.py` holds shared pure validation functions and row-to-JSON mapping helpers. Avoid circular imports.
 
-Playwright scaffolding files (`package.json`, `playwright.config.ts`, `e2e/*.spec.ts`, and optionally `docker-compose.yml` for a Playwright-only container) may be created by the Gas Town rig integration-test scaffolder. If generated, keep them; do not overwrite generated configurations unnecessarily. If not generated, create minimal compatible Playwright files when the UI test phase begins.
+Playwright scaffolding files (`package.json` when required by the host setup, `taskboard/playwright.config.ts`, and `taskboard/tests/playwright/*.spec.ts`) may be created by the Gas Town rig integration-test scaffolder. If generated, keep them; do not overwrite generated configurations unnecessarily. If not generated, create minimal compatible Playwright files when the browser-test phase begins. Do not create a second, containerized application.
 
 ## 4. Data model and invariants
 
@@ -158,7 +161,7 @@ Export a module-level `app = create_app()` for this command. HTTP handlers obtai
 
 Write meaningful pytest tests. Use `tmp_path / "taskboard-test.db"` per test, and FastAPI `TestClient` or HTTPX ASGI transport. Ensure tests do not touch the runtime `taskboard.db`.
 
-### Repository tests (`tests/test_repository.py`)
+### Repository tests (`taskboard/tests/test_repository.py`)
 
 1. New database has empty projects, schema is idempotent.
 2. Create and list projects in deterministic ascending ID order.
@@ -167,7 +170,7 @@ Write meaningful pytest tests. Use `tmp_path / "taskboard-test.db"` per test, an
 5. Patch title, description, priority, status and preserve omitted fields.
 6. Deleting a project cascades to its tasks.
 
-### API tests (`tests/test_api.py`)
+### API tests (`taskboard/tests/test_api.py`)
 
 1. Health endpoint gives exact JSON response.
 2. Project create/list/delete round trip.
@@ -178,14 +181,14 @@ Write meaningful pytest tests. Use `tmp_path / "taskboard-test.db"` per test, an
 7. Validate `[]` response for empty lists, and no body for 204 deletes.
 8. Check both query filters compose with AND and preserve ID order.
 
-### Content integration tests (`tests/test_ui_content.py`)
+### Content integration tests (`taskboard/tests/test_ui_content.py`)
 
 1. `GET /` returns real HTML with the heading `TaskBoard`, project form, task form, and all three column headings.
 2. `GET /static/app.js` and `/static/style.css` return 200 and nonempty content.
 
 ### Browser E2E (Playwright)
 
-Minimum three scenarios, in `e2e/taskboard.spec.ts`:
+Minimum three scenarios, in `taskboard/tests/playwright/taskboard.spec.ts`:
 
 1. First load displays the real TaskBoard heading and all three column headings.
 2. Create a project and task through the browser; verify task title in `To Do`; click `Move forward` and verify it appears in `Doing`; move again and verify `Done`; delete the task and verify it disappears.
@@ -199,28 +202,28 @@ Implement the following three phases in order. Each phase must leave a runnable,
 
 ### Phase 1 — Foundation and projects
 
-Required outputs: `pyproject.toml`, package layout, `db.py`, project repository operations, `main.py` with `create_app`, health and project API routes, basic HTML page and static mounting, README setup instructions, foundational pytest tests.
+Required outputs: root `pyproject.toml`, package layout, `db.py`, project repository operations, `main.py` with `create_app`, health and project API routes, a real basic HTML page and static mounting, root README setup instructions, and foundational pytest tests. The HTML template and both static assets are created in this phase because `main.py` mounts and serves them; Phase 2 extends their behavior rather than introducing those prerequisites later.
 
 Exit criteria:
 
 ```bash
 python -m pip install -e '.[test]'
-python -m pytest -q
+python -m pytest -q taskboard/tests
 ```
 
 All Phase 1 tests pass; `GET /api/health` returns exact JSON; create/list/delete project works; GET `/` returns real HTML. No task UI required yet.
 
 ### Phase 2 — Tasks and Kanban UI
 
-Required outputs: task repository operations, task API routes, validation, project selection, task creation/edit/delete, columns and move-forward behavior, pytest repository/API tests, and UI content tests.
+Required outputs: task repository operations, task API routes, validation, project selection, task creation/edit/delete, completed Kanban columns and move-forward behavior, and expanded pytest repository/API/UI-content coverage. Extend the Phase 1 template and static assets in place; do not introduce a second page or a new file layout.
 
-Exit criteria: `python -m pytest -q` passes; a user can create a project and task, move it from todo to doing to done, edit it, and delete it via the real browser UI.
+Exit criteria: `python -m pytest -q taskboard/tests` passes; a user can create a project and task, move it from todo to doing to done, edit it, and delete it via the real browser UI.
 
 ### Phase 3 — Filters, browser tests, and release check
 
-Required outputs: status/priority filters, complete pytest coverage, Playwright scenarios, README test and run instructions, final smoke QA.
+Required outputs: status/priority filters, complete pytest coverage, Playwright scenarios under `taskboard/tests/playwright/`, README test and run instructions, and final smoke QA.
 
-Exit criteria: `python -m pytest -q` passes; `npx playwright test` passes with server already running on `127.0.0.1:8080`; no features or dependencies outside this specification are introduced.
+Exit criteria: `python -m pytest -q taskboard/tests` passes; `npx playwright test --config taskboard/playwright.config.ts taskboard/tests/playwright` passes with the server already running on `127.0.0.1:8080`; no features or dependencies outside this specification are introduced.
 
 ### Suggested bead decomposition (planner guidance)
 
@@ -252,17 +255,17 @@ This repository is an external test rig for the Gas Town `rig-flow` workflow, no
 - QA: smoke-test real API behavior and rendered browser content and report failures with the relevant file and bead ID.
 - If a verification step fails, repair within the current phase. Do not replace failed tests with assertions that merely check status 200 or placeholder content.
 
-Phase verify command: `python -m pytest -q` for Phases 1 and 2; for Phase 3, `python -m pytest -q` plus `npx playwright test` against the already running server. Gas Town-generated workflow profiles may translate these commands into the per-phase check fields it supports.
+Run all commands from the repository root. Phase verify command: `python -m pytest -q taskboard/tests` for Phases 1 and 2; for Phase 3, `python -m pytest -q taskboard/tests` plus `npx playwright test --config taskboard/playwright.config.ts taskboard/tests/playwright` against the already running server. A generated workflow profile must preserve these paths, phase IDs, and phase ordering; it must not assign files required by a phase to a later phase.
 
 ## 10. Definition of done
 
-1. Fresh checkout with Python 3.11+ installs with `python -m pip install -e '.[test]'`.
-2. `python -m pytest -q` passes and asserts real domain state changes.
+1. Fresh checkout with Python 3.11+ installs from the repository root with `python -m pip install -e '.[test]'`.
+2. `python -m pytest -q taskboard/tests` passes and asserts real domain state changes.
 3. `python -m uvicorn taskboard.main:app --host 127.0.0.1 --port 8080` starts the web app with no environment keys or manual schema steps.
 4. GET `/` renders real UI, not a placeholder; static assets are accessible.
 5. Users can create/delete projects and create/edit/move/filter/delete tasks from the UI.
 6. Data persists across server restarts; deleting a project deletes its tasks.
-7. Browser E2E tests pass against the running app; no E2E test depends on order or pre-existing projects.
+7. Browser E2E tests at `taskboard/tests/playwright/` pass against the running app; no E2E test depends on order or pre-existing projects.
 8. The orchestrated workflow reports completion only after phase tests and final QA pass.
 
 ## 11. Explicitly out of scope
