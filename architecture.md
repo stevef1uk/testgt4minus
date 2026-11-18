@@ -185,6 +185,10 @@ configuration, and scenarios while completing filters. The graph is acyclic,
 each profile deliverable has an explicit phase owner, and each dependency key
 is owned by its declaring phase.
 
+### Delivery ownership cross-check
+
+The foundation-and-projects phase owns every concrete application and foundational test path required by the profile: `taskboard/pyproject.toml`, `taskboard/README.md`, `taskboard/.gitignore`, `taskboard/__init__.py`, `taskboard/main.py`, `taskboard/db.py`, `taskboard/models.py`, `taskboard/repository.py`, `taskboard/templates/index.html`, `taskboard/static/app.js`, `taskboard/static/style.css`, `taskboard/tests/conftest.py`, `taskboard/tests/test_repository.py`, and `taskboard/tests/test_api.py`. These files form one runnable package and are verified together by the Phase 1 install and pytest command. The tasks-and-kanban-ui phase owns the newly introduced `taskboard/tests/test_ui_content.py` and extends the already-owned application files in place; it does not create alternate copies. The filters-browser-tests-and-release-check phase owns `taskboard/package.json`, `taskboard/package-lock.json`, `taskboard/playwright.config.ts`, and `taskboard/playwright/taskboard.spec.ts`. Its browser spec consumes the existing application and canonical static paths. Thus every literal profile `required_files` entry has exactly one first-delivery phase owner, while later phases may extend earlier-owned files as required by SPEC.
+
 ## Requirements
 
 ### foundation-and-projects
