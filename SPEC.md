@@ -252,7 +252,8 @@ First-delivery owner: exactly these eight canonical files:
 `taskboard/repository.py`, and `taskboard/tests/test_repository.py`.
 Implement package metadata and documentation, schema and connection setup,
 validation/data mapping, project repository operations, and repository tests.
-This subphase must install the package and pass
+Ensure Python test dependencies are installed before test review. Test-review
+commands must run tests only and must not install packages. This subphase verifies with
 `python -m pytest -q tests/test_repository.py`.
 
 #### Delivery subphase 1b — Runnable app and project API
@@ -269,10 +270,11 @@ Exit criteria:
 
 ```bash
 cd taskboard
-python -m pip install -e '.[test]'
 python -m pytest -q tests
 ```
 
+Ensure the package and test dependencies are installed before test review;
+the test-review command itself must not install packages.
 All Phase 1 tests pass; `GET /api/health` returns exact JSON;
 create/list/delete project works; GET `/` returns real HTML. No task UI is
 required yet. Both delivery subphases together own 14 first-delivery files,
@@ -298,7 +300,10 @@ Phase 3 adds `taskboard/package.json`, `taskboard/package-lock.json`,
 `taskboard/playwright/taskboard.spec.ts`; it extends the existing UI, tests,
 and README at their canonical paths.
 
-Exit criteria: `cd taskboard && python -m pytest -q tests && npm install --ignore-scripts && npx playwright test --config playwright.config.ts playwright` passes with the server already running on `127.0.0.1:8080`; no features or dependencies outside this specification are introduced.
+Ensure Node dependencies are installed before test review. With the server
+already running on `127.0.0.1:8080`, verify Phase 3 with
+`cd taskboard && python -m pytest -q tests && ./node_modules/.bin/playwright test --config playwright.config.ts playwright`.
+No features or dependencies outside this specification are introduced.
 
 ### Suggested bead decomposition (planner guidance)
 
@@ -342,8 +347,9 @@ This repository is an external test rig for the Gas Town `rig-flow` workflow, no
 Run all project commands from `taskboard/`. Phase 1a verifies with
 `python -m pytest -q tests/test_repository.py`; Phase 1b and Phase 2 verify
 with `python -m pytest -q tests`; Phase 3 verifies with
-`python -m pytest -q tests && npm install --ignore-scripts && npx playwright test --config playwright.config.ts playwright`
-against the already running server. A generated workflow profile must use
+`python -m pytest -q tests && ./node_modules/.bin/playwright test --config playwright.config.ts playwright`
+against the already running server. Install Python and Node dependencies in
+project setup, not during test review. A generated workflow profile must use
 the exact canonical paths above, preserve this feature-phase ordering and
 the two ordered Phase 1 delivery subphases, assign each newly introduced
 deliverable to its first required phase, and not invent path aliases or move

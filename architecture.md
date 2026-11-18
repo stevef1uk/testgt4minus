@@ -97,10 +97,12 @@ three headings, and nonempty static responses.
 
 ## Integration and testing
 
-Commands run from taskboard/. Phase 1 runs the SPEC installation and verification command from the repository root. Phase 2 runs python -m pytest -q tests. Phase 3 runs the
-pytest suite, npm install --ignore-scripts, and
-npx playwright test --config playwright.config.ts playwright against an
-already-running server at 127.0.0.1:8080. Browser assertions inspect real
+Commands run from taskboard/. Ensure Python and Node dependencies are installed
+before test review; test-review commands must not install packages. Phase 1 runs only the repository/API
+pytest verification command. Phase 2 runs python -m pytest -q tests. Phase 3
+runs the pytest suite and
+./node_modules/.bin/playwright test --config playwright.config.ts playwright
+against an already-running server at 127.0.0.1:8080. Browser assertions inspect real
 task text and state changes, not placeholders or status codes alone. Unique
 project names and cleanup make scenarios independent.
 
@@ -130,7 +132,7 @@ delivery_phases:
       - taskboard/models.py
       - taskboard/repository.py
       - taskboard/tests/test_repository.py
-    qa_verify_command: "cd taskboard && python -m pip install -e '.[test]' && python -m pytest -q tests/test_repository.py"
+    qa_verify_command: "cd taskboard && python -m pytest -q tests/test_repository.py"
     depends_on: []
     file_dependencies:
       taskboard/repository.py: [taskboard/db.py, taskboard/models.py]
@@ -145,7 +147,7 @@ delivery_phases:
       - taskboard/static/style.css
       - taskboard/tests/conftest.py
       - taskboard/tests/test_api.py
-    qa_verify_command: "cd taskboard && python -m pip install -e '.[test]' && python -m pytest -q tests"
+    qa_verify_command: "cd taskboard && python -m pytest -q tests"
     depends_on: [phase-1-core]
     file_dependencies:
       taskboard/main.py: [taskboard/db.py, taskboard/models.py, taskboard/repository.py, taskboard/templates/index.html, taskboard/static/app.js, taskboard/static/style.css]
@@ -174,7 +176,7 @@ delivery_phases:
       - taskboard/package-lock.json
       - taskboard/playwright.config.ts
       - taskboard/playwright/taskboard.spec.ts
-    qa_verify_command: "cd taskboard && python -m pytest -q tests && npm install --ignore-scripts && npx playwright test --config playwright.config.ts playwright"
+    qa_verify_command: "cd taskboard && python -m pytest -q tests && ./node_modules/.bin/playwright test --config playwright.config.ts playwright"
     depends_on: [phase-2]
     file_dependencies:
       taskboard/playwright.config.ts: [taskboard/package.json]
@@ -229,9 +231,10 @@ The phase gate proves real create, move, edit, and delete state changes.
 
 Complete status and priority filters and full pytest coverage. Add the
 Playwright manifest, matching generated lockfile, host configuration, and
-three independent scenarios under taskboard/playwright/. The release command
-runs pytest, npm installation, and the specified Playwright suite against
-127.0.0.1:8080. No extra routes, aliases, deployment mechanism, or
+three independent scenarios under taskboard/playwright/. Ensure Node
+dependencies are installed before test review; the release verification runs pytest and
+the specified already-installed Playwright suite against 127.0.0.1:8080. No
+extra routes, aliases, deployment mechanism, or
 out-of-scope dependency is introduced.
 
 ## Acceptance mapping
