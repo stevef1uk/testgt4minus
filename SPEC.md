@@ -225,7 +225,15 @@ Playwright scenarios must use unique project names and must not rely on previous
 
 ## 8. Delivery phases and dependencies
 
-Implement the following three phases in order. Each phase must leave a runnable, testable application; do not plan all UI work before backend verification.
+Implement the following three feature phases in order. The Foundation and
+projects phase is divided into two dependent delivery subphases because its
+complete first-delivery file set exceeds the hard limit of 10 files per
+delivery phase. Every delivery subphase must own at most 10 unique files;
+never omit a required output to meet the limit. Keep the two foundation
+subphases sequential so the second builds on the package, database, models,
+and repository established by the first. Later feature phases may extend
+files already delivered, but each canonical file has only one first-delivery
+owner.
 
 ### Phase 1 — Foundation and projects
 
@@ -236,10 +244,26 @@ and foundational pytest tests. The HTML template and both static assets are
 created in this phase because `main.py` mounts and serves them; Phase 2 extends
 their behavior rather than introducing those prerequisites later.
 
-Phase 1 owns `taskboard/pyproject.toml`, `taskboard/README.md`,
-`taskboard/.gitignore`, the package modules, the basic template/static assets,
-and `taskboard/tests/conftest.py`, `test_repository.py`, and `test_api.py`.
-These files are created once and may be extended in later phases.
+#### Delivery subphase 1a — Foundation core
+
+First-delivery owner: exactly these eight canonical files:
+`taskboard/pyproject.toml`, `taskboard/README.md`, `taskboard/.gitignore`,
+`taskboard/__init__.py`, `taskboard/db.py`, `taskboard/models.py`,
+`taskboard/repository.py`, and `taskboard/tests/test_repository.py`.
+Implement package metadata and documentation, schema and connection setup,
+validation/data mapping, project repository operations, and repository tests.
+This subphase must install the package and pass
+`python -m pytest -q tests/test_repository.py`.
+
+#### Delivery subphase 1b — Runnable app and project API
+
+Depends on delivery subphase 1a. First-delivery owner: exactly these six
+canonical files: `taskboard/main.py`,
+`taskboard/templates/index.html`, `taskboard/static/app.js`,
+`taskboard/static/style.css`, `taskboard/tests/conftest.py`, and
+`taskboard/tests/test_api.py`. Implement `create_app`, health and project API
+routes, real basic HTML and static mounting, and isolated API test fixtures.
+Pass the full Phase 1 test gate:
 
 Exit criteria:
 
@@ -249,7 +273,11 @@ python -m pip install -e '.[test]'
 python -m pytest -q tests
 ```
 
-All Phase 1 tests pass; `GET /api/health` returns exact JSON; create/list/delete project works; GET `/` returns real HTML. No task UI required yet.
+All Phase 1 tests pass; `GET /api/health` returns exact JSON;
+create/list/delete project works; GET `/` returns real HTML. No task UI is
+required yet. Both delivery subphases together own 14 first-delivery files,
+split 8 and 6; each stays within the 10-file limit. All files are created
+once and may be extended in later phases.
 
 ### Phase 2 — Tasks and Kanban UI
 
@@ -305,9 +333,23 @@ This repository is an external test rig for the Gas Town `rig-flow` workflow, no
   `file_dependencies` mappings must include that prefix (for example,
   `taskboard/templates/index.html`). Assign every canonical profile deliverable
   to its first phase; dependency keys must be owned by that phase.
+- The Foundation and projects SPEC phase maps to the ordered architecture
+  delivery subphases `phase-1-core` and `phase-1-app`, both with
+  `spec_focus: Foundation and projects`; the app subphase depends on the core
+  subphase. Each delivery phase may own no more than 10 unique files.
 - If a verification step fails, repair within the current phase. Do not replace failed tests with assertions that merely check status 200 or placeholder content.
 
-Run all project commands from `taskboard/`. Phase verify command: `python -m pytest -q tests` for Phases 1 and 2; for Phase 3, `python -m pytest -q tests && npm install --ignore-scripts && npx playwright test --config playwright.config.ts playwright` against the already running server. A generated workflow profile must use the exact canonical paths above, preserve these phase IDs and ordering, assign each newly introduced deliverable to its first required phase, and not invent path aliases or move prerequisites to a later phase. If the profile disagrees with this SPEC, correct or regenerate the profile before design validation; do not change the architecture to match a conflicting profile.
+Run all project commands from `taskboard/`. Phase 1a verifies with
+`python -m pytest -q tests/test_repository.py`; Phase 1b and Phase 2 verify
+with `python -m pytest -q tests`; Phase 3 verifies with
+`python -m pytest -q tests && npm install --ignore-scripts && npx playwright test --config playwright.config.ts playwright`
+against the already running server. A generated workflow profile must use
+the exact canonical paths above, preserve this feature-phase ordering and
+the two ordered Phase 1 delivery subphases, assign each newly introduced
+deliverable to its first required phase, and not invent path aliases or move
+prerequisites to a later phase. If the profile disagrees with this SPEC,
+correct or regenerate the profile before design validation; do not change the
+architecture to match a conflicting profile.
 
 ## 10. Definition of done
 
