@@ -8,10 +8,10 @@ version = "0.1.0"
 description = "Local TaskBoard application"
 requires-python = ">=3.11"
 dependencies = [
-    "fastapi",
-    "uvicorn",
-    "jinja2",
-    "httpx",
+"fastapi",
+"uvicorn",
+"jinja2",
+"httpx",
 ]
 
 [project.optional-dependencies]
