@@ -21,7 +21,7 @@ Assertions:
 Requirement: Provide create_app, database-path selection, health and project HTTP routes, real HTML/static delivery, isolated fixtures, and project API tests.
 Level: integration
 Test file: taskboard/tests/test_api.py
-Bead ID: pending
+Bead ID: te-oj5
 Phase: phase-1-app
 Scenarios:
 - Create an app with a temporary database and verify GET /api/health returns exact JSON; create, list, and delete projects.
