@@ -1,19 +1,17 @@
-# Test Review — phase-1 app/core
+# Test Review — Foundation and projects: core
 
 ## Summary
-All in-scope planned tests are present and substantive; phase verify `cd taskboard && python -m pytest -q tests` passed.
+
+All active-phase tests pass; phase verify passed.
 
 ## Per-requirement results
+
 ### phase-1-core — PASS
-- Phase: phase-1-core
-- Test file: taskboard/tests/test_repository.py
-- Verify result: passed
-- Notes: Real assertions reviewed; no stub markers or empty test bodies.
-### phase-1-app — PASS
-- Phase: phase-1-app
-- Test file: taskboard/tests/test_api.py
-- Verify result: passed
-- Notes: Real assertions reviewed; no stub markers or empty test bodies.
+
+- Test file: `taskboard/tests/test_repository.py`
+- Verify result: `5 passed, 1 warning`
+- Notes: The test file contains substantive repository assertions covering idempotent initialization and empty lists, ascending project IDs, trimmed project names, task defaults, UTC timestamps, status/priority conjunction filtering, partial-update preservation, and project-delete cascade behavior. Future-phase rows are deferred.
 
 ## Overall assessment
-PASS — active-phase requirements are covered by substantive tests and the configured phase verification is green.
+
+The active `phase-1-core` requirement has a present, substantive test file and the configured phase verification is green. Ready for QA.
