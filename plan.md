@@ -1,121 +1,73 @@
 # Implementation plan
 
-## Scope and verification
+Active delivery phase: `phase-1-app` (Foundation and projects: runnable app). The completed core phase supplies the database, models, and repository; this phase must use those exports rather than introduce a second persistence model. Work only on the six active-phase paths.
 
-This phase delivers the runnable Taskboard web application on top of the completed
-SQLite model/repository foundation. Implement only the six active-phase paths below;
-later UI/browser and packaging paths remain out of scope. The polecat must preserve
-the existing repository interfaces and use the application contract in SPEC.md.
-Required verification is `cd taskboard && python -m pytest -q tests`.
+## Verification contract
+
+Run from the project directory after implementation:
+`cd taskboard && python -m pytest -q tests`
+The tests must exercise the real FastAPI application with an isolated database, and must prove the SPEC-defined project CRUD behavior, HTML/static responses, JSON shapes, status codes, and invalid-request behavior. Do not add later-phase task/Kanban/filter or browser-test scope.
 
 ## Bead map
 
-### te-hit: taskboard/main.py
-- Scope: Build the FastAPI application factory, configure the database from
-  `TASKBOARD_DB_PATH` (and the explicit factory path used by tests), serve the
-  index template/static assets, and expose the SPEC task CRUD HTTP API.
-- Architecture: architecture.md, application entrypoint section; this module owns
-  `create_app` and the HTTP route handlers and translates repository records to
-  JSON.
-- Interfaces: `create_app(database_path: str | None = None)` returns the FastAPI
-  application; provide the SPEC routes for listing tasks, creating a task,
-  partially updating a task, deleting a task, and serving `/`. Preserve the
-  documented JSON field names, status/filter query parameters, HTTP methods, and
-  success status codes.
-- Depends on: taskboard/models.py, taskboard/repository.py, taskboard/db.py
-  (completed foundation)
-- Consumed by: taskboard/tests/conftest.py, taskboard/tests/test_api.py,
-  taskboard/templates/index.html, taskboard/static/app.js
-- Acceptance: a TestClient can create, list, update, and delete tasks through the
-  exact SPEC `/api/tasks` routes; list filtering and conjunction behavior match
-  the repository contract; responses contain stable IDs, UTC timestamps, defaults,
-  and the documented validation/error status; `/` returns the index template and
-  static resources are reachable.
-- Verify: `cd taskboard && python -m pytest -q tests`
-
 ### te-2qb: taskboard/templates/index.html
-- Scope: Provide the complete single-page taskboard markup, semantic task form,
-  filter controls, task list container, edit/delete controls, and links to the
-  application stylesheet and script.
-- Architecture: architecture.md UI template section; IDs/classes and data
-  attributes are the DOM contract consumed by app.js and asserted by tests.
-- Interfaces: expose the SPEC-required page title, task input fields, filter
-  controls, submit button, task-list/status containers, and static asset links;
-  keep the exact selectors named in the architecture.
-- Depends on: taskboard/main.py
-- Consumed by: taskboard/static/app.js, taskboard/static/style.css,
-  taskboard/tests/test_api.py
-- Acceptance: GET `/` renders a non-empty HTML document containing the required
-  form and filter elements, task list target, accessible labels, and references
-  to `/static/app.js` and `/static/style.css`; no server-side feature outside
-  the SPEC is added.
-- Verify: `cd taskboard && python -m pytest -q tests`
-
-### te-ms3: taskboard/static/app.js
-- Scope: Implement the browser client for loading tasks, submitting new tasks,
-  applying the documented filters, editing completion/title data, deleting
-  tasks, and rendering the returned task collection into the template.
-- Architecture: architecture.md frontend behavior section; use the template's
-  selectors and the SPEC API routes rather than duplicating persistence logic.
-- Interfaces: issue fetch requests to the exact SPEC `/api/tasks` endpoints with
-  the documented query/body fields; bind the template form, filter, edit, and
-  delete controls and render IDs, titles, statuses, and timestamps.
-- Depends on: taskboard/main.py, taskboard/templates/index.html
-- Consumed by: taskboard/tests/test_api.py, taskboard/static/style.css
-- Acceptance: initial load displays API tasks; create, filter, update, and delete
-  actions issue the correct HTTP method/path and refresh visible state; empty
-  results and API failures produce the SPEC-required visible state; rendering
-  does not invent routes or unsupported fields.
+- Scope: Provide the semantic application page and the elements named by the SPEC for the project view. Keep this file presentational: no database calls, application logic, or invented API contract.
+- Architecture: `architecture.md` template ownership; passive semantic markup consumed by `taskboard/main.py`, with the project-page structure and static asset references required by SPEC.
+- Interfaces: HTML document and the SPEC-required page elements; references the application JavaScript and stylesheet at the paths served by the app.
+- Depends on: `<none>` (the template is passive and must not depend on `taskboard/main.py`).
+- Consumed by: `taskboard/main.py` (HTML rendering/serving); `taskboard/tests/test_api.py` (page response assertions).
+- Acceptance: GET `/` returns this template through the application with a successful HTML response; required project controls, headings, containers, and asset references are present; markup does not embed repository/database behavior.
 - Verify: `cd taskboard && python -m pytest -q tests`
 
 ### te-1vt: taskboard/static/style.css
-- Scope: Style the page shell, form, filter row, task cards/list, status
-  indicators, action controls, and responsive layout using the template classes.
-- Architecture: architecture.md stylesheet section; selectors must correspond to
-  the HTML contract and support the documented completed/pending presentation.
-- Interfaces: define the classes and layout rules referenced by
-  `taskboard/templates/index.html` and `taskboard/static/app.js`, including
-  visible completed-task and empty-list states.
-- Depends on: taskboard/templates/index.html
-- Consumed by: taskboard/main.py, browser/UI assertions in later phases
-- Acceptance: the stylesheet is served successfully, contains rules for the
-  required page/form/list/filter/action selectors, and visually distinguishes
-  task status without requiring a new dependency or unrequested theme feature.
+- Scope: Implement the SPEC-required layout and readable styling for the page, forms, project list, and feedback states without adding behavior.
+- Architecture: `architecture.md` static stylesheet ownership; served as a static asset referenced by the template.
+- Interfaces: stylesheet at `/static/style.css`, with selectors/classes matching the elements in `taskboard/templates/index.html`.
+- Depends on: `<none>` (standalone static asset).
+- Consumed by: `taskboard/templates/index.html`, `taskboard/main.py`, and API/page tests that verify static delivery.
+- Acceptance: the stylesheet is served from the SPEC-defined static URL with a successful CSS response; it contains rules for the required page/project/form presentation and does not implement persistence or JavaScript behavior.
+- Verify: `cd taskboard && python -m pytest -q tests`
+
+### te-ms3: taskboard/static/app.js
+- Scope: Implement the browser-side project interactions specified for this phase, using the exact API paths, methods, request fields, and response fields from SPEC; update the template-owned elements.
+- Architecture: `architecture.md` static JavaScript ownership; browser client for the phase-1 project API, not a second data store.
+- Interfaces: JavaScript asset at `/static/app.js`; calls only the SPEC project endpoints and renders their returned project data into the page.
+- Depends on: `<none>` (the script is a passive static dependency of the rendered page).
+- Consumed by: `taskboard/templates/index.html`, `taskboard/main.py`, and later UI tests.
+- Acceptance: the script loads successfully; it can list projects, submit the SPEC project creation form, and remove a project using the exact documented request/response contract; success and invalid-request feedback are reflected in the page without inventing task features.
+- Verify: `cd taskboard && python -m pytest -q tests`
+
+### te-hit: taskboard/main.py
+- Scope: Build the runnable FastAPI application, render the template, mount/serve static assets, and expose the SPEC-defined project endpoints using the completed core repository.
+- Architecture: `architecture.md` application ownership; depends on core `db.py`, `models.py`, and `repository.py`, and serves the passive template and static assets. Preserve the application factory used by tests.
+- Interfaces: exported application factory `create_app(...)` as specified by architecture/tests; HTML root route, static mounting, and the exact SPEC HTTP routes for project listing, creation, and deletion, including their documented JSON keys and status codes.
+- Depends on: `taskboard/templates/index.html`, `taskboard/static/app.js`, `taskboard/static/style.css`, and completed-phase `taskboard/db.py`, `taskboard/models.py`, `taskboard/repository.py`.
+- Consumed by: `taskboard/tests/conftest.py`, `taskboard/tests/test_api.py`, and the eventual runnable entrypoint/UI.
+- Acceptance: the factory initializes against the test-selected database; GET `/` renders the page; static files are reachable; project create/list/delete operations delegate to the core repository and persist across requests; valid responses match SPEC JSON and status codes; malformed or invalid project requests produce the SPEC-defined error response; no duplicate in-memory model or unrelated endpoints is introduced.
 - Verify: `cd taskboard && python -m pytest -q tests`
 
 ### te-xsd: taskboard/tests/conftest.py
-- Scope: Supply the isolated pytest `client` fixture for API tests, using a
-  temporary SQLite database and reloading the application after setting
-  `TASKBOARD_DB_PATH`.
-- Architecture: architecture.md test-fixture section; tests must exercise the
-  public FastAPI app without sharing state between cases.
-- Interfaces: provide pytest fixture `client` yielding a FastAPI
-  `TestClient` created from `taskboard.main.create_app`.
-- Depends on: taskboard/main.py, taskboard/db.py
-- Consumed by: taskboard/tests/test_api.py
-- Acceptance: each test receives an isolated temporary database, the environment
-  variable is honored, and the fixture cleans up the TestClient context after
-  yielding; do not add global or production persistence changes.
+- Scope: Supply the isolated pytest client fixture for the real application and a temporary database per test.
+- Architecture: `architecture.md` test-fixture ownership; reload/configure the application so tests do not use a developer database.
+- Interfaces: pytest fixture `client` yielding a `TestClient` for the application factory.
+- Depends on: `taskboard/main.py`.
+- Consumed by: `taskboard/tests/test_api.py`.
+- Acceptance: each test receives a functioning client backed by a fresh temporary SQLite path; the fixture exercises `create_app` and does not replace repository behavior with mocks.
 - Verify: `cd taskboard && python -m pytest -q tests`
 
 ### te-oj5: taskboard/tests/test_api.py
-- Scope: Add the phase API contract tests using the client fixture, covering
-  page/static serving and the full task lifecycle plus filters and validation.
-- Architecture: architecture.md API test section; assertions must be black-box
-  HTTP assertions against SPEC routes and payloads.
-- Interfaces: tests use the `client` fixture and the public `create_app` behavior;
-  cover exact verbs, paths, request fields, response fields, and status codes
-  specified in SPEC.md.
-- Depends on: taskboard/tests/conftest.py, taskboard/main.py
-- Consumed by: phase QA verification
-- Acceptance: tests prove empty listing, creation with defaults and UTC timestamp,
-  ascending IDs, conjunction filters, partial update, cascade deletion, index
-  rendering, static asset responses, and the SPEC-defined invalid-request
-  behavior; assertions must fail if route names, JSON keys, or status codes drift.
+- Scope: Add focused API/page tests that lock the phase contract and catch route, payload, status, persistence, template, and static-asset drift.
+- Architecture: `architecture.md` API-test ownership; use the shared `client` fixture and the real application.
+- Interfaces: pytest tests for the SPEC HTTP table and rendered/static responses; exact endpoint names and JSON fields must come from SPEC rather than guessed aliases.
+- Depends on: `taskboard/tests/conftest.py`, `taskboard/main.py`, and the completed core repository.
+- Consumed by: phase verification and QA.
+- Acceptance: tests prove the root HTML page and both static assets; prove empty/list project behavior, valid creation, persistence/listing, deletion, and the SPEC-defined invalid request/status behavior; assert exact JSON keys and status codes and fail on route drift. Tests remain limited to phase-1 project functionality.
 - Verify: `cd taskboard && python -m pytest -q tests`
+
+## Dependency direction
+
+Static/template files are passive providers. `taskboard/main.py` consumes them; it is incorrect for the template or assets to depend on `main.py`. The fixture depends on the application, and API tests depend on the fixture/application. Core files are completed-phase prerequisites and are not re-beaded here.
 
 ## Definition of done
 
-All six beads are implemented with no stubs or unrelated features, the API and
-page use the completed core repository rather than a second data model, and the
-exact phase command passes.
+All six active-phase beads are implemented without stubs or unrelated features, the app uses the completed core repository, and `cd taskboard && python -m pytest -q tests` passes.
