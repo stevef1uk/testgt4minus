@@ -1,4 +1,4 @@
-# Architecture for testgt4minus
+# Architecture for testgt4m
 
 layout_root: taskboard
 
