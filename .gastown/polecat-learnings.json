@@ -16,6 +16,14 @@
       "bead_path": "taskboard/tests/test_repository.py",
       "hits": 1,
       "updated_at": "2026-11-19T09:24:07Z"
+    },
+    {
+      "stack": "python",
+      "rule": "Avoid in test_api.py: E TypeError: unhashable type: 'dict'",
+      "source": "verify_fix",
+      "bead_path": "taskboard/tests/test_api.py",
+      "hits": 1,
+      "updated_at": "2026-11-19T09:43:57Z"
     }
   ]
 }

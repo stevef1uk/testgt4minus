@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Polecat Projects</title>
+  <link rel="stylesheet" href="/static/style">
+</head>
+<body>
+  <main id="project-page" class="project-page">
+    <header class="page-header">
+      <div>
+        <p class="eyebrow">Polecat</p>
+        <h1>Projects</h1>
+        <p class="page-description">Plan and track the work that matters.</p>
+      </div>
+      <button id="new-project" class="button button-primary" type="button">New project</button>
+    </header>
+
+    <section id="project-form-region" class="state-region" aria-labelledby="project-form-title" hidden>
+      <h2 id="project-form-title">Project details</h2>
+      <form id="project-form" class="project-form">
+        <div class="form-grid">
+          <label for="name">Name
+            <input id="name" name="name" type="text" required>
+          </label>
+          <label for="title">Title
+            <input id="title" name="title" type="text" required>
+          </label>
+          <label for="description" class="form-field-wide">Description
+            <input id="description" name="description" type="text">
+          </label>
+          <label for="status">Status
+            <input id="status" name="status" type="text">
+          </label>
+          <label for="priority">Priority
+            <input id="priority" name="priority" type="number" min="0">
+          </label>
+          <label for="created_at">Created at
+            <input id="created_at" name="created_at" type="datetime-local">
+          </label>
+          <label for="updated_at">Updated at
+            <input id="updated_at" name="updated_at" type="datetime-local">
+          </label>
+        </div>
+        <div class="form-actions">
+          <button id="cancel-project" class="button button-secondary" type="button">Cancel</button>
+          <button class="button button-primary" type="submit">Save project</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="project-controls" aria-label="Project filters">
+      <label for="project-filter">Filter projects
+        <input id="project-filter" name="project-filter" type="search" placeholder="Search projects">
+      </label>
+      <label for="status-filter">Status
+        <select id="status-filter" name="status-filter">
+          <option value="">All statuses</option>
+          <option value="todo">To do</option>
+          <option value="in_progress">In progress</option>
+          <option value="done">Done</option>
+        </select>
+      </label>
+    </section>
+
+    <section id="project-state" class="state-region" aria-live="polite">
+      <p id="loading-state" class="state-message" hidden>Loading projects…</p>
+      <p id="empty-state" class="state-message" hidden>No projects yet.</p>
+      <p id="error-state" class="state-message state-error" hidden></p>
+    </section>
+
+    <section id="project-columns" class="project-columns" aria-label="Projects">
+      <div id="project-list" class="project-list"></div>
+    </section>
+  </main>
+  <script src="/static/app"></script>
+</body>
+</html>
