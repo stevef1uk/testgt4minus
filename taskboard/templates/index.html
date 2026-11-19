@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Polecat Projects</title>
-  <link rel="stylesheet" href="/static/style">
+  <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
   <main id="project-page" class="project-page">
@@ -24,23 +24,15 @@
           <label for="name">Name
             <input id="name" name="name" type="text" required>
           </label>
-          <label for="title">Title
             <input id="title" name="title" type="text" required>
           </label>
-          <label for="description" class="form-field-wide">Description
             <input id="description" name="description" type="text">
           </label>
-          <label for="status">Status
             <input id="status" name="status" type="text">
           </label>
-          <label for="priority">Priority
             <input id="priority" name="priority" type="number" min="0">
           </label>
-          <label for="created_at">Created at
-            <input id="created_at" name="created_at" type="datetime-local">
           </label>
-          <label for="updated_at">Updated at
-            <input id="updated_at" name="updated_at" type="datetime-local">
           </label>
         </div>
         <div class="form-actions">
@@ -74,6 +66,6 @@
       <div id="project-list" class="project-list"></div>
     </section>
   </main>
-  <script src="/static/app"></script>
+  <script src="/static/app.js"></script>
 </body>
 </html>
