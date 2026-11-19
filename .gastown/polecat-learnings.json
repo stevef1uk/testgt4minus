@@ -8,6 +8,14 @@
       "bead_path": "taskboard/repository.py",
       "hits": 1,
       "updated_at": "2026-11-18T15:35:47Z"
+    },
+    {
+      "stack": "python",
+      "rule": "Avoid in test_repository.py: E TypeError: create_task() got an unexpected keyword argument 'status'",
+      "source": "verify_fix",
+      "bead_path": "taskboard/tests/test_repository.py",
+      "hits": 1,
+      "updated_at": "2026-11-19T09:24:07Z"
     }
   ]
 }
