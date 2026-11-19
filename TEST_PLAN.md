@@ -6,7 +6,7 @@
 Requirement: Deliver the SQLite foundation, validation/mapping, project and task schema invariants, repository operations, and isolated repository coverage.
 Level: unit
 Test file: taskboard/tests/test_repository.py
-Bead ID: te-1u1
+Bead ID: te-7yg
 Phase: phase-1-core
 Scenarios:
 - Initialize a new database twice and verify empty project/task results, foreign-key cascade support, and deterministic ascending project IDs.
