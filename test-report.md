@@ -1,15 +1,19 @@
-# Test Review — phase-1
+# Test Review — phase-1 app/core
 
 ## Summary
-Active-phase requirements were reviewed against their planned test files; phase verification command was executed.
+All in-scope planned tests are present and substantive; phase verify `cd taskboard && python -m pytest -q tests` passed.
 
 ## Per-requirement results
 ### phase-1-core — PASS
-- Test file(s): taskboard/tests/test_repository.py
-- Notes: active-phase requirement reviewed; substantive assertions and phase verification confirmed.
+- Phase: phase-1-core
+- Test file: taskboard/tests/test_repository.py
+- Verify result: passed
+- Notes: Real assertions reviewed; no stub markers or empty test bodies.
 ### phase-1-app — PASS
-- Test file(s): taskboard/tests/test_api.py
-- Notes: active-phase requirement reviewed; substantive assertions and phase verification confirmed.
+- Phase: phase-1-app
+- Test file: taskboard/tests/test_api.py
+- Verify result: passed
+- Notes: Real assertions reviewed; no stub markers or empty test bodies.
 
 ## Overall assessment
-All active-phase planned requirements passed review and the configured pytest verification.
+PASS — active-phase requirements are covered by substantive tests and the configured phase verification is green.
