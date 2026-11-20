@@ -1,31 +1,24 @@
-# Test Review — Foundation and projects (phase-1-core, phase-1-app)
+# Test Review — Phase 1 Foundation and projects
 
 ## Summary
-All active-phase tests pass; phase verify passed (`23 passed, 1 warning`).
+Partial tests pass; phase verify `cd taskboard && python -m pytest -q tests` failed.
 
 ## Per-requirement results
 
 ### phase-1-core — PASS
 - Test file: `taskboard/tests/test_repository.py`
-- Verify result: passed
-- Notes: Repository tests exercise schema initialization, empty/idempotent databases, project/task persistence, ascending ordering, status/priority filters, partial updates preserving omitted fields, validation, and cascade deletion with real SQLite state.
-- Evidence: {"file":"taskboard/tests/test_repository.py","line":31,"excerpt":"assert repository.list_projects(db_path) == []"}
-- Evidence: {"file":"taskboard/tests/test_repository.py","line":65,"excerpt":"assert repository.list_tasks(project[\"id\"], status=\"doing\", db_path=db_path) == [second]"}
-- Evidence: {"file":"taskboard/tests/test_repository.py","line":88,"excerpt":"assert updated[\"description\"] == \"keep\""}
-- Evidence: {"file":"taskboard/tests/test_repository.py","line":98,"excerpt":"assert repository.list_tasks(project[\"id\"], db_path=db_path) == []"}
+- Verify result: failed overall (`3 failed, 20 passed`)
+- Notes: The repository tests contain substantive assertions for persistence, ordering, filtering, partial updates, validation, special characters, timestamps, and cascade deletion.
 
-### phase-1-app — PASS
+### phase-1-app — FAIL
 - Test file: `taskboard/tests/test_api.py`
-- Verify result: passed
-- Notes: API integration tests use isolated configured applications and TestClient, asserting exact health JSON, project CRUD/statuses, structured errors, database isolation, root HTML, and static asset delivery.
-- Evidence: {"file":"taskboard/tests/test_api.py","line":7,"excerpt":"assert response.json() == {\"status\": \"ok\"}"}
-- Evidence: {"file":"taskboard/tests/test_api.py","line":63,"excerpt":"assert deleted.status_code == 204"}
-- Evidence: {"file":"taskboard/tests/test_api.py","line":89,"excerpt":"assert second_client.get(\"/api/projects\").json() == []"}
-- Evidence: {"file":"taskboard/tests/test_api.py","line":12,"excerpt":"assert response.status_code == 200"}
-- Evidence: {"file":"taskboard/tests/test_api.py","line":22,"excerpt":"assert app_script.status_code == 200"}
+- Verify result: failed. `test_task_api_create_list_patch_and_delete` expected PATCH 200 but received 404; `test_task_api_rejects_invalid_payloads_and_missing_resources` expected `{"error":"task not found"}` but received `{"detail":"Not Found"}`; `test_task_api_does_not_allow_project_mutation` expected 400 but received 404.
+- Notes: The active app tests do cover health, project CRUD, isolated databases, root/static responses, and real assertions. However, the configured full-suite gate is not green. The root assertion in this file checks `id="project-page"` and static references rather than the planned `TaskBoard` heading and project form.
 
-## Deferred out-of-scope rows
-- `phase-2` and `phase-3` are future phases and were not evaluated in this review.
+### phase-1-app fixture — PARTIAL
+- Test file: `taskboard/tests/conftest.py`
+- Verify result: fixture is exercised by the API tests, but the overall suite failed.
+- Notes: The fixture creates an isolated temporary database and a real TestClient; teardown is provided by the context manager.
 
 ## Overall assessment
-All active-phase TEST_PLAN.md requirements have existing substantive tests, and the configured phase verification is green. No repair is required.
+FAIL. The required phase verification is red. Implementation repair is required for the missing task PATCH/error handling currently exercised by `taskboard/tests/test_api.py`; reopen bead `te-hky`. The active app test also needs stronger root-content assertions for the planned heading and project-form requirement.
