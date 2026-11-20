@@ -166,8 +166,6 @@ delivery_phases:
       - taskboard/tests/test_api.py
     qa_verify_command: "cd taskboard && python -m pytest -q tests"
     depends_on: [phase-1-app]
-    file_dependencies:
-      taskboard/tests/test_ui_content.py: [taskboard/main.py, taskboard/templates/index.html, taskboard/static/app.js, taskboard/static/style.css]
   - id: phase-3
     title: Filters, browser tests, and release check
     spec_focus: Filters, browser tests, and release check
