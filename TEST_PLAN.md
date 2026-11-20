@@ -3,63 +3,62 @@
 ## Requirements → tests
 
 ### phase-1-core
-Requirement: Deliver the SQLite schema, validation/mapping, project and task repository foundations with idempotent initialization, foreign keys, busy timeout, UTC timestamps, deterministic ordering, filtering, partial updates, cascade deletion, and parameterized writes.
+Requirement: The repository initializes the SQLite schema idempotently, creates projects and tasks with defaults and timestamps, lists in stable order, filters by status and priority, updates partially, deletes projects with cascading tasks, rejects invalid status/priority values, and uses parameterized SQL writes.
 Level: unit
 Test file: taskboard/tests/test_repository.py
 Bead ID: te-7yg
 Phase: phase-1-core
 Scenarios:
-- Initialize a new database repeatedly and verify empty project/task collections without schema errors.
-- Create projects and tasks, verify ascending IDs, UTC-offset timestamps, task defaults, status/priority filters including AND composition, and preservation of omitted patch fields.
-- Delete a project and verify its tasks are removed by the foreign-key cascade.
+- Initialize a new database twice and verify the schema and empty collections remain usable.
+- Create records with default status/priority and verify timestamps, ordering, filters, partial updates, and project deletion cascade.
+- Attempt invalid status and priority values and verify they are rejected without modifying stored data.
+- Use values containing quotes/SQL metacharacters in create and update writes and verify they round-trip as data rather than altering the query or schema.
 Assertions:
-- Repository results match the specified project/task JSON fields and deterministic ordering.
-- Invalid values are rejected by the model/repository boundary, writes do not interpolate request data, and cascade/filter/update behavior changes persisted state as specified.
+- Invalid status and priority writes raise the specified validation error and leave the record unchanged.
+- Values are bound as parameters: special-character values are stored literally, no SQL is executed from them, and the database remains queryable.
+- Returned records have the documented defaults, ordering, filters, update results, and cascade behavior.
 
 ### phase-1-app
-Requirement: Provide a runnable FastAPI app factory with exact health and project API routes, isolated database selection, real HTML root rendering, and mounted static assets.
+Requirement: The HTTP application exposes the documented health and project CRUD behavior, returns the specified error status/body shape, isolates each configured database, and serves the TaskBoard root page with its heading, project form, and static assets.
 Level: integration
 Test file: taskboard/tests/test_api.py
 Bead ID: te-c2c
 Phase: phase-1-app
 Scenarios:
-- Create an isolated app client, verify `GET /api/health` returns the exact health object, and verify project create/list/delete round trips with ascending IDs.
-- Submit empty or whitespace-only project names and delete a missing project; inspect application error JSON and status codes.
-- Request `/` and both static assets, checking the real basic HTML TaskBoard page and nonempty served files; no task UI is required in this phase.
+- Request the health endpoint and create, list, update, and delete projects through the API.
+- Submit malformed, missing, and unknown project data and verify the documented error status and JSON shape.
+- Request the root page and inspect its visible TaskBoard heading, project form, and references to the static application assets.
+- Create data against separate configured temporary databases and verify that one client cannot see the other client's data.
 Assertions:
-- Valid project creation returns 201, deletion returns 204 with an empty body, missing deletion returns 404, and invalid names return 400 with an `error` field.
-- Root content is real HTML containing `TaskBoard` and the project form, without requiring the phase-2 task form or Kanban columns; static responses are 200 and nonempty.
-- Tests use a fresh temporary SQLite path and never touch the runtime database.
+- Health and CRUD responses have the documented status codes, content types, decoded JSON keys, and values.
+- Invalid requests return the required error status and body fields without creating a project.
+- The root response contains the required TaskBoard heading and project form, and static resources are delivered successfully.
+- Database isolation is preserved across application instances.
 
 ### phase-2
-Requirement: Add task persistence and API behavior, project selection, task creation/edit/delete, three Kanban columns, move-forward behavior, visible empty/error states, and safe rendering while preserving Phase 1 behavior.
-Level: integration
-Test file: taskboard/tests/test_api.py, taskboard/tests/test_ui_content.py
-Bead ID: te-c2c
+Requirement: The delivered task-board UI content exposes the documented project/task controls, task fields, status and priority choices, and the project/task empty and populated states.
+Level: ui
+Test file: taskboard/tests/test_ui_content.py
+Bead ID: pending
 Phase: phase-2
 Scenarios:
-- Create a project and task, list tasks, patch each supported field while preserving omitted fields, and delete the task.
-- Verify missing project/task responses, invalid title/description/status/priority values, empty PATCH rejection, empty lists, and composed query filters with ID ordering.
-- Verify project selection and task UI content through the required content-test surface, including forms, columns, empty/error regions, and static assets.
+- Inspect the served UI markup for project creation and task creation controls and the required labels/fields.
+- Verify status and priority controls contain the documented choices and that empty and populated project/task containers are present.
 Assertions:
-- Task creation returns 201 with `todo` status and default `medium` priority; patch returns 200 and does not permit project reassignment.
-- Invalid task inputs return 400, missing resources return 404, deletes return bodyless 204, and project deletion removes its tasks.
-- The UI exposes task title/description/priority controls, Move forward/Edit/Delete controls, and hides or disables Move forward for done tasks; user text is inserted safely.
-
-
+- Required controls, labels, field names, and choice values are present in the UI content.
+- The UI provides distinct containers/states for no projects, no tasks, and rendered project/task cards.
 
 ### phase-3
-Requirement: Complete status and priority filters and provide independent Playwright browser coverage for initial rendering, task lifecycle, and priority filtering against the running server.
+Requirement: A browser-driven user can create and manage projects and tasks through the running TaskBoard UI, move tasks through the documented workflow, and cannot move a done task forward.
 Level: ui
 Test file: taskboard/playwright/taskboard.spec.ts
 Bead ID: pending
 Phase: phase-3
 Scenarios:
-- Load the running UI and verify the TaskBoard heading and all three Kanban column headings.
-- Create a uniquely named project and task, move it from To Do to Doing to Done, delete it, and verify each visible state change.
-- Create two differently prioritized tasks, filter to high priority, verify only the high-priority card is shown, then reset the filter and verify both cards return.
+- Run the canonical Playwright configuration against the host server, create a project and task, and verify both appear in the appropriate cards.
+- Edit task fields and move the task through the available status controls, including the done state.
+- Reload the page and verify persisted data remains visible; verify done tasks hide or disable Move forward.
 Assertions:
-- Browser assertions inspect real task titles and column placement, not only status codes or placeholder visibility.
-- Each scenario uses unique data and cleanup, remains independent of test order, and verifies that filter query parameters exclude and restore the appropriate cards.
-- Done tasks hide or disable Move forward; browser tests run through the canonical Playwright configuration and host server without creating a second application.
----END WRITE
+- Browser-visible project/task names and updated fields match the submitted values.
+- Status transitions update the rendered task card and persist after reload.
+- A done task has no enabled Move forward action, while the appropriate cards expose the documented controls.
