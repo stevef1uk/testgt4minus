@@ -26,18 +26,30 @@ Assertions:
 Requirement: The runnable application exposes the health and project HTTP routes, initializes the configured database, renders real root HTML, and serves both canonical static assets.
 Level: integration
 Test file: taskboard/tests/test_api.py
-Bead ID: te-c2c
+Bead ID: te-hky
 Phase: phase-1-app
 Scenarios:
-- Create an isolated app with a temporary database and verify GET /api/health returns exactly {"status":"ok"}.
-- Create trimmed projects, verify ascending ID ordering and empty-list serialization, then delete an existing and a missing project.
+- Use the conftest fixture to create an isolated application and temporary database, then verify GET /api/health returns exactly {"status":"ok"}.
+- Create trimmed projects, verify ascending ID ordering, verify a fresh project list serializes as the JSON array [], then delete an existing and a missing project.
 - Submit empty and whitespace-only names and verify the documented 400 error shape.
 - Request the root page and both canonical static assets.
 Assertions:
-- Health and project endpoints return the documented decoded JSON values and status codes; successful deletion is 204 with an empty body and missing deletion is 404 with an error object.
-- Project names are trimmed and persisted, IDs remain ordered, and isolated clients do not share database state.
+- The fixture supplies a TestClient backed by the configured temporary database; separate clients do not share database state.
+- Health and project endpoints return the documented decoded JSON values and status codes; successful deletion is 204 with an empty body, and missing deletion is 404 with the documented error object.
+- An empty project collection decodes to a list with zero elements (the JSON value []), while created projects have trimmed names and ascending IDs.
 - Invalid project names return the documented application-level validation response.
-- The root response is real HTML containing the TaskBoard heading and project form, while app.js and style.css return 200 with nonempty content.
+- The root response is real HTML containing the TaskBoard heading and project form; /static/app.js and /static/style.css each return 200 with nonempty content.
+
+Level: integration
+Test file: taskboard/tests/conftest.py
+Bead ID: te-j3i
+Phase: phase-1-app
+Scenarios:
+- Run the shared client fixture with a temporary path and TASKBOARD_DB_PATH override.
+- Reload the application and yield a usable TestClient for each test.
+Assertions:
+- The fixture creates an isolated SQLite database and exposes a client whose requests exercise the application.
+- Fixture teardown closes the client and does not leak state between tests.
 
 ### phase-2
 Requirement: The phase-2 delivery adds the specified task HTTP behavior and user-visible task interactions.
