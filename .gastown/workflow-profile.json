@@ -79,7 +79,6 @@
             "taskboard/db.py",
             "taskboard/models.py",
             "taskboard/repository.py",
-            "taskboard/static/app.js",
             "taskboard/static/style.css"
           ],
           "taskboard/tests/conftest.py": [
