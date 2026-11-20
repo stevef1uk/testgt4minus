@@ -1,16 +1,26 @@
-# Test Review — phase-1-app
+# Test Review — Tasks and Kanban UI
 
 ## Summary
-The repaired phase-1-app API tests cover both previously reported scenarios, and the complete phase verification passed.
+
+Phase verify passed for the configured pytest suite, but the planned phase-2 requirement is not covered by substantive tests.
 
 ## Per-requirement results
-### phase-1-app — PASS
-- Test file: taskboard/tests/test_api.py
-- Verify result: `cd taskboard && python -m pytest -q tests` passed.
-- Notes: The tests exercise configured application instances and assert that records do not cross database boundaries. They also exercise a deleted/missing resource and assert its structured error response, including the 404 behavior.
 
-- Evidence: {"file":"taskboard/tests/test_api.py","line":83,"excerpt":"assert created.status_code == 201"}
-- Evidence: {"file":"taskboard/tests/test_api.py","line":52,"excerpt":"assert \"error\" in response.json()"}
+### phase-1-core — PASS
+- Test file: `taskboard/tests/test_repository.py`
+- Verify result: passed (`cd taskboard && python -m pytest -q tests`)
+- Notes: Repository persistence, ordering, filters, partial updates, validation, special characters, and cascade deletion have real assertions.
+
+### phase-1-app — PASS
+- Test file: `taskboard/tests/test_api.py`
+- Verify result: passed (`cd taskboard && python -m pytest -q tests`)
+- Notes: Health, project CRUD, structured errors, database isolation, root HTML, and static assets have real assertions.
+
+### phase-2 — FAIL
+- Test file: `taskboard/tests/test_api.py`
+- Verify result: suite passed, but this does not establish phase-2 coverage.
+- Notes: `test_api.py` contains no task-route assertions for task creation, listing, PATCH, deletion, invalid task payloads, missing task/project resources, or mutation protection. The phase-2 row's planned integration scenarios are therefore absent despite the file existing.
 
 ## Overall assessment
-The repaired test file contains real assertions for configured-database isolation and structured missing-resource 404 responses. No further repair is required for the reviewed finding.
+
+Test repair is required for the phase-2 API requirement. Add substantive API assertions to `taskboard/tests/test_api.py` for every planned task route and failure scenario, then rerun the configured pytest verification. Phase-3 remains deferred.
