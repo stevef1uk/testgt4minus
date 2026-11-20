@@ -3,14 +3,6 @@
   "entries": [
     {
       "stack": "python",
-      "rule": "Avoid in repository.py: E ModuleNotFoundError: No module named 'taskboard.repository'",
-      "source": "verify_fix",
-      "bead_path": "taskboard/repository.py",
-      "hits": 1,
-      "updated_at": "2026-11-18T15:35:47Z"
-    },
-    {
-      "stack": "python",
       "rule": "Avoid in test_repository.py: E TypeError: create_task() got an unexpected keyword argument 'status'",
       "source": "verify_fix",
       "bead_path": "taskboard/tests/test_repository.py",
@@ -61,6 +53,13 @@
       "bead_path": "taskboard/main.py",
       "hits": 1,
       "updated_at": "2026-11-20T17:40:11Z"
+    },
+    {
+      "stack": "python",
+      "rule": "QA lesson: {\"summary\":\"Stage 2 (code quality / YAGNI) fails: main.py, templates/index.html, static/app.js, and static/style.css include t...",
+      "source": "qa_rework",
+      "hits": 1,
+      "updated_at": "2026-11-20T17:55:49Z"
     }
   ]
 }
