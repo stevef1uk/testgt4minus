@@ -14,5 +14,10 @@ def client(tmp_path, monkeypatch):
     import taskboard.main as main
 
     application = importlib.reload(main).create_app(str(database_path))
+    # The fixture contract is a fresh, usable database-backed client for every test.
+    assert database_path.exists()
     with TestClient(application) as test_client:
+        health = test_client.get("/api/health")
+        assert health.status_code == 200
+        assert health.json() == {"status": "ok"}
         yield test_client
