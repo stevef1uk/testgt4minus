@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
-  testDir: './e2e',
+  testDir: './playwright',
   timeout: 10000,
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
@@ -9,7 +9,7 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: [['html', { open: 'never' }], ['list']],
   use: {
-    baseURL: process.env.BASE_URL || 'http://host.docker.internal:8080',
+    baseURL: process.env.BASE_URL || 'http://127.0.0.1:8080',
     trace: 'on-first-retry',
   },
   projects: [
