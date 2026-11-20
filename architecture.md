@@ -22,8 +22,11 @@ taskboard/main.py; and browser behavior belongs to taskboard/static/app.js.
 The HTTP contract is intentionally limited to the SPEC routes: GET /, GET /api/projects, POST /api/projects, DELETE /api/projects/{project_id}, GET /api/projects/{project_id}/tasks, POST /api/projects/{project_id}/tasks, PATCH /api/tasks/{task_id}, and DELETE /api/tasks/{task_id}. No singular-project route, alternate task prefix, or method alias is part of the contract. The root response serves the template and the mounted static directory at /static; API responses are JSON and use the SPEC status codes for validation, missing resources, and malformed identifiers.
 
 The database path is resolved once by create_app: a nonempty explicit db_path wins, otherwise a nonempty TASKBOARD_DB_PATH wins, otherwise the application uses taskboard/taskboard.db relative to the repository root. Tests always pass an isolated temporary path. The application must create parent directories before connecting, must not derive a second path from the process working directory, and must never put a database under taskboard/tests or a temporary test directory unless that path was explicitly supplied.
+The canonical fallback is exactly taskboard/taskboard.db (repository-root-relative); taskboard/db.py must resolve it from the repository root rather than from an import-time or test working directory. The only environment key is TASKBOARD_DB_PATH. The route spellings and methods are exact: GET /, GET /api/projects, POST /api/projects, DELETE /api/projects/{project_id}, GET /api/projects/{project_id}/tasks, POST /api/projects/{project_id}/tasks, PATCH /api/tasks/{task_id}, and DELETE /api/tasks/{task_id}; no Docker proxy or alternate prefix is used.
 
 The delivery checks are native repository checks and do not require Docker or a Docker daemon. No Dockerfile, compose file, container image, or container-only host name is an implicit deliverable; a judge must invoke the documented Python and Playwright commands from the repository root with taskboard/ as the application directory.
+Therefore every qa_verify_command in the delivery contract must execute from the repository root using taskboard/ paths and local tools: Python phases use python -m pytest taskboard/tests, and the browser phase uses npm --prefix taskboard exec playwright test -- --config taskboard/playwright.config.ts. Commands must not invoke docker, docker compose, a container hostname, or require a Docker daemon; the documented host-server lifecycle remains the Playwright configuration contract.
+Workflow-profile collision correction: Python tests are owned only by taskboard/tests/test_repository.py, taskboard/tests/test_api.py, and taskboard/tests/test_ui_content.py; browser tests are owned only by taskboard/playwright/taskboard.spec.ts. The generated taskboard/package-lock.json is an npm tool output, not a second implementation manifest. Each of these concrete paths appears in exactly one delivery phase, while later phases may modify shared application files without changing ownership.
 
 ## Planned file layout
 
@@ -138,7 +141,7 @@ delivery_phases:
       - taskboard/models.py
       - taskboard/repository.py
       - taskboard/tests/test_repository.py
-    qa_verify_command: "cd taskboard && python -m pytest -q tests/test_repository.py"
+    qa_verify_command: "cd taskboard && python -m pytest -q taskboard/tests/test_repository.py"
     depends_on: []
     file_dependencies:
       taskboard/repository.py: [taskboard/db.py, taskboard/models.py]

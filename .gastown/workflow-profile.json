@@ -44,7 +44,7 @@
           "taskboard/repository.py",
           "taskboard/tests/test_repository.py"
         ],
-        "qa_verify_command": "cd taskboard && python -m pytest -q tests/test_repository.py",
+        "qa_verify_command": "cd taskboard && python -m pytest -q taskboard/tests/test_repository.py",
         "spec_focus": "Foundation and projects",
         "file_dependencies": {
           "taskboard/repository.py": [
@@ -141,11 +141,7 @@
       }
     ],
     "explicit_delivery_contract": true,
-    "active_phase_id": "phase-2",
-    "completed_phase_ids": [
-      "phase-1-core",
-      "phase-1-app"
-    ],
+    "active_phase_id": "phase-1-core",
     "spec_summary": "",
     "min_architecture_bytes": 3200,
     "min_plan_bytes": 800,
