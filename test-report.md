@@ -1,23 +1,19 @@
-# Test Review — active phase requirements
+# Test Review — phase-1
 
 ## Summary
-All active-phase requirements have planned substantive tests; phase verify passed.
+Phase verification passed, but the active-phase test coverage is incomplete.
 
 ## Per-requirement results
-### phase-1-core — PASS
-- Phase: phase-1-core
-- Test file: taskboard/tests/test_repository.py
-- Evidence: {"file":"taskboard/tests/test_repository.py","line":16,"excerpt":'with pytest.raises(ValueError):'}
-- Verify result: passed
-- Notes: Real test assertions exercise the requirement behavior.
-### phase-1-app — PASS
-- Phase: phase-1-app
-- Test file: taskboard/tests/conftest.py
-- FAIL: test lacks substantive assertions or contains stub markers
-- Test file: taskboard/tests/test_api.py
-- Evidence: {"file":"taskboard/tests/test_api.py","line":6,"excerpt":'assert response.status_code == 200'}
-- Verify result: passed
-- Notes: Real test assertions exercise the requirement behavior.
+
+### phase-1-core — FAIL
+- Test file: `taskboard/tests/test_repository.py`
+- Verify result: passed (`23 passed`)
+- Notes: The suite covers basic persistence, ordering, filters, partial updates, timestamps, and cascade deletion, but it does not assert several planned/spec-required invariants: required tables, `foreign_keys`, `busy_timeout`, the `tasks.project_id` index, invalid descriptions/statuses/priorities, or the complete documented field/type contract.
+
+### phase-1-app — FAIL
+- Test file: `taskboard/tests/test_api.py`
+- Verify result: passed (`23 passed`)
+- Notes: The suite covers health, basic project CRUD, isolation, task behavior, and asset reachability, but does not cover the planned overlong project-name case, project ordering with multiple projects, documented content requirements such as the `TaskBoard` heading and project form, or appropriate static content types. The root assertions only check an element ID and asset references.
 
 ## Overall assessment
-2 active-phase requirement rows reviewed; phase verification `cd taskboard && python -m pytest -q tests` passed.
+The pytest gate is green, but the active phase requirements are not fully covered by substantive assertions. Strengthen the two planned test files and rerun the phase gate.
