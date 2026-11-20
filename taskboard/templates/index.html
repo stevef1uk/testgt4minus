@@ -65,6 +65,41 @@
     <section id="project-columns" class="project-columns" aria-label="Projects">
       <div id="project-list" class="project-list"></div>
     </section>
+    <section id="taskboard-region" aria-labelledby="taskboard-heading" hidden>
+      <div class="taskboard-header">
+        <div>
+          <p class="eyebrow">Selected project</p>
+          <h2 id="taskboard-heading">TaskBoard</h2>
+        </div>
+        <button id="back-to-projects" type="button">Back to projects</button>
+      </div>
+      <form id="task-form" hidden>
+        <label for="task-title">Task title</label>
+        <input id="task-title" name="title" type="text" required maxlength="200">
+        <label for="task-description">Description</label>
+        <textarea id="task-description" name="description" rows="3"></textarea>
+        <button type="submit">Save task</button>
+        <button id="cancel-task" type="button">Cancel</button>
+      </form>
+      <button id="new-task" type="button">New task</button>
+      <p id="task-loading-state" hidden>Loading tasks…</p>
+      <p id="task-empty-state" hidden>No tasks yet.</p>
+      <div id="task-error-state" role="alert" hidden></div>
+      <div id="kanban-board" class="kanban-board">
+        <section id="todo-column" class="kanban-column" aria-labelledby="todo-heading">
+          <h3 id="todo-heading">To Do</h3>
+          <div id="todo-tasks" class="task-list"></div>
+        </section>
+        <section id="doing-column" class="kanban-column" aria-labelledby="doing-heading">
+          <h3 id="doing-heading">Doing</h3>
+          <div id="doing-tasks" class="task-list"></div>
+        </section>
+        <section id="done-column" class="kanban-column" aria-labelledby="done-heading">
+          <h3 id="done-heading">Done</h3>
+          <div id="done-tasks" class="task-list"></div>
+        </section>
+      </div>
+    </section>
   </main>
   <script src="/static/app.js"></script>
 </body>
