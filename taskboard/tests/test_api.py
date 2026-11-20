@@ -94,3 +94,97 @@ def test_missing_project_returns_structured_404(client):
     assert response.status_code == 404
     assert response.headers["content-type"].startswith("application/json")
     assert response.json() == {"error": "project not found"}
+
+
+def _create_task_project(client):
+    project = client.post("/api/projects", json={"name": "Task API"}).json()
+    return project["id"]
+
+
+def test_task_api_create_list_patch_and_delete(client):
+    project_id = _create_task_project(client)
+
+    created = client.post(
+        f"/api/projects/{project_id}/tasks",
+        json={
+            "title": " Plan release ",
+            "description": "Coordinate the launch",
+            "priority": "high",
+        },
+    )
+    assert created.status_code == 201
+    task = created.json()
+    assert task["project_id"] == project_id
+    assert task["title"] == "Plan release"
+    assert task["description"] == "Coordinate the launch"
+    assert task["status"] == "todo"
+    assert task["priority"] == "high"
+
+    listed = client.get(f"/api/projects/{project_id}/tasks")
+    assert listed.status_code == 200
+    assert listed.json() == [task]
+
+    updated = client.patch(
+        f"/api/projects/{project_id}/tasks/{task['id']}",
+        json={"title": "Release", "status": "done"},
+    )
+    assert updated.status_code == 200
+    assert updated.json()["title"] == "Release"
+    assert updated.json()["status"] == "done"
+    assert updated.json()["description"] == "Coordinate the launch"
+
+    deleted = client.delete(f"/api/projects/{project_id}/tasks/{task['id']}")
+    assert deleted.status_code == 204
+    assert deleted.content == b""
+    assert client.get(f"/api/projects/{project_id}/tasks").json() == []
+
+
+def test_task_api_rejects_invalid_payloads_and_missing_resources(client):
+    project_id = _create_task_project(client)
+
+    for payload in (
+        {},
+        {"title": "   "},
+        {"title": "Valid", "priority": "urgent"},
+    ):
+        response = client.post(f"/api/projects/{project_id}/tasks", json=payload)
+        assert response.status_code == 400
+        assert response.json()["error"]
+
+    missing_project = client.get("/api/projects/999999/tasks")
+    assert missing_project.status_code == 404
+    assert missing_project.json() == {"error": "project not found"}
+
+    missing_task = client.patch(
+        f"/api/projects/{project_id}/tasks/999999",
+        json={"title": "Missing"},
+    )
+    assert missing_task.status_code == 404
+    assert missing_task.json() == {"error": "task not found"}
+
+    missing_delete = client.delete(
+        f"/api/projects/{project_id}/tasks/999999"
+    )
+    assert missing_delete.status_code == 404
+    assert missing_delete.json() == {"error": "task not found"}
+
+
+def test_task_api_does_not_allow_project_mutation(client):
+    project_id = _create_task_project(client)
+    other_project = client.post("/api/projects", json={"name": "Other"}).json()["id"]
+    created = client.post(
+        f"/api/projects/{project_id}/tasks",
+        json={"title": "Keep ownership"},
+    )
+    task = created.json()
+
+    response = client.patch(
+        f"/api/projects/{project_id}/tasks/{task['id']}",
+        json={"project_id": other_project},
+    )
+    assert response.status_code == 400
+    assert response.json()["error"]
+    tasks = client.get(f"/api/projects/{project_id}/tasks").json()
+    assert len(tasks) == 1
+    assert tasks[0]["project_id"] == project_id
+    assert client.get(f"/api/projects/{other_project}/tasks").json() == []
