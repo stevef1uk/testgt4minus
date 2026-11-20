@@ -66,3 +66,31 @@ def test_delete_project_returns_empty_204_and_404_for_missing(client):
     missing = client.delete(f"/api/projects/{project['id']}")
     assert missing.status_code == 404
     assert "error" in missing.json()
+
+
+def test_configured_databases_are_isolated(tmp_path, monkeypatch):
+    import importlib
+    from fastapi.testclient import TestClient
+
+    first_path = tmp_path / "first.sqlite3"
+    second_path = tmp_path / "second.sqlite3"
+    import taskboard.main as main
+
+    monkeypatch.setenv("TASKBOARD_DB_PATH", str(first_path))
+    first_app = importlib.reload(main).create_app(str(first_path))
+    with TestClient(first_app) as first_client:
+        created = first_client.post("/api/projects", json={"name": "First"})
+        assert created.status_code == 201
+        assert [item["name"] for item in first_client.get("/api/projects").json()] == ["First"]
+
+    monkeypatch.setenv("TASKBOARD_DB_PATH", str(second_path))
+    second_app = importlib.reload(main).create_app(str(second_path))
+    with TestClient(second_app) as second_client:
+        assert second_client.get("/api/projects").json() == []
+
+
+def test_missing_project_returns_structured_404(client):
+    response = client.get("/api/projects/999999")
+    assert response.status_code == 404
+    assert response.headers["content-type"].startswith("application/json")
+    assert response.json() == {"error": "project not found"}
