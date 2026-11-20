@@ -53,6 +53,14 @@
       "source": "qa_rework",
       "hits": 1,
       "updated_at": "2026-11-20T17:31:42Z"
+    },
+    {
+      "stack": "python",
+      "rule": "Avoid in main.py: E AssertionError: assert '/api/projects/{project_id}/tasks/{task_id}' not in {'/', '/api/health', '/api/projects', '/ap...",
+      "source": "verify_fix",
+      "bead_path": "taskboard/main.py",
+      "hits": 1,
+      "updated_at": "2026-11-20T17:40:11Z"
     }
   ]
 }

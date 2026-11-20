@@ -103,42 +103,7 @@ def create_app(db_path: str | None = None) -> FastAPI:
         except LookupError as exc:
             return _error(404, str(exc))
 
-    @application.patch("/api/projects/{project_id}/tasks/{task_id}")
-    async def patch_project_task(
-        project_id: int,
-        task_id: int,
-        request: Request,
-    ):
-        if not project_exists(project_id):
-            return _error(404, "project not found")
-        try:
-            payload = await request.json()
-        except ValueError:
-            return _error(400, "request body must be a JSON object")
-        if not isinstance(payload, dict):
-            return _error(400, "request body must be a JSON object")
-        changes = {
-            key: value
-            for key, value in payload.items()
-            if key in {"title", "description", "status", "priority"}
-        }
-        try:
-            task = repository.update_task(task_id, changes, selected_path)
-        except (TypeError, ValueError) as exc:
-            return _error(400, str(exc))
-        if task is None or task["project_id"] != project_id:
-            return _error(404, "task not found")
-        return task
 
-    @application.delete("/api/projects/{project_id}/tasks/{task_id}", status_code=204)
-    def delete_project_task(project_id: int, task_id: int):
-        if not project_exists(project_id):
-            return _error(404, "project not found")
-        tasks = repository.list_tasks(project_id, db_path=selected_path)
-        if not any(task["id"] == task_id for task in tasks):
-            return _error(404, "task not found")
-        repository.delete_task(task_id, selected_path)
-        return Response(status_code=204)
 
     @application.delete("/api/projects/{project_id}", status_code=204)
     def delete_project(project_id: int):
