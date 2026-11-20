@@ -19,7 +19,7 @@ Assertions:
 - Combined filters use AND semantics and cascade deletion leaves no child tasks.
 
 ### phase-1-app
-Requirement: Provide the runnable FastAPI app factory, exact health and project routes, isolated fixture, real root HTML, and mounted static assets.
+Requirement: The application exposes the specified project API routes and wires them to the repository.
 Level: integration
 Test file: taskboard/tests/test_api.py
 Bead ID: te-c2c
