@@ -1,29 +1,22 @@
-# Test Review — phase-1-core / phase-1-app
+# Test Review — phase-1-app
 
 ## Summary
-Coverage remains incomplete or phase verify failed.
+No: the repaired API test file still lacks the requested coverage, and the configured phase verify fails because its path does not exist from `taskboard/`.
 
 ## Per-requirement results
-### overlong project-name rejection — PASS
-- Test file: taskboard/tests/test_api.py
-- Notes: Real assertion(s): line 51: assert response.status_code == 400; line 55: assert missing.status_code == 400; line 151: assert response.status_code == 400; line 185: assert response.status_code == 400
-### multi-project ascending-ID ordering — PASS
-- Test file: taskboard/tests/test_api.py
-- Notes: Real assertion(s): line 42: assert set(project) == {"id", "name", "created_at"}; line 117: assert task["project_id"] == project_id; line 139: assert client.get(f"/api/projects/{project_id}/tasks").json() == []; line 189: assert tasks[0]["project_id"] == project_id
-### visible TaskBoard heading — FAIL
-- Test file: taskboard/tests/test_api.py
-- Notes: No matching real assertion found.
-### project form — PASS
-- Test file: taskboard/tests/test_api.py
-- Notes: Real assertion(s): line 41: assert project["name"] == "Alpha"; line 42: assert set(project) == {"id", "name", "created_at"}; line 84: assert [item["name"] for item in first_client.get("/api/projects").json()] == ["First"]
-### canonical static content types — PASS
-- Test file: taskboard/tests/test_api.py
-- Notes: Real assertion(s): line 13: assert "text/html" in response.headers["content-type"]; line 95: assert response.headers["content-type"].startswith("application/json")
-### explicit UTC offset — PASS
+
+### phase-1-core — PASS
 - Test file: taskboard/tests/test_repository.py
-- Notes: Real assertion(s): line 44: assert created_at.utcoffset() == timezone.utc.utcoffset(created_at)
-- Evidence: {"file":"taskboard/tests/test_api.py","line":41,"excerpt":"assert project[\"name\"] == \"Alpha"}
+- Verify result: failed to collect the configured path; the repository suite itself passes when invoked as `python -m pytest -q tests/test_repository.py` from `taskboard/`.
+- Notes: The existing repository assertions cover overlong model rejection, ascending IDs, idempotent persistence, and UTC offsets. The UTC offset assertion is adequate.
 - Evidence: {"file":"taskboard/tests/test_repository.py","line":44,"excerpt":"assert created_at.utcoffset() == timezone.utc.utcoffset(created_at)"}
 
+### phase-1-app — FAIL
+- Test file: taskboard/tests/test_api.py
+- Verify result: failed — `cd taskboard && python -m pytest -q taskboard/tests/test_repository.py` reports `file or directory not found`.
+- Notes: `test_api.py` has no assertion for overlong project-name API rejection, no multi-project ascending-ID list assertion, no visible `TaskBoard` heading assertion, no project-form assertion, and no canonical `application/javascript` / `text/css` content-type assertions. Its existing static test only checks status and nonempty bytes.
+- Test repair: taskboard/tests/test_api.py — add real API assertions for all five requested scenarios and correct the planned invalid-name status to the SPEC's 400 application error (the plan currently says 422, which is not the documented project-name API contract).
+- Evidence: {"file":"taskboard/tests/test_api.py","line":13,"excerpt":"assert \"text/html\" in response.headers[\"content-type\"]"}
+
 ## Overall assessment
-The repaired API tests cover rejection, ordering, rendered heading/form, and static content-type behavior; repository tests explicitly verify the UTC offset. Phase verification failed.
+FAIL. Reopen te-c2c for test repair. The configured repository verification command must also be corrected or aligned with the actual repository test path before approval; no source implementation change is indicated by this test-coverage finding.
