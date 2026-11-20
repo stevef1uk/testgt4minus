@@ -36,7 +36,7 @@ Assertions:
 Requirement: Add task repository operations, task routes, validation, filtering, and exact task API behavior.
 Level: integration
 Test file: taskboard/tests/test_api.py
-Bead ID: pending
+Bead ID: te-oj5
 Phase: phase-2
 Scenarios:
 - Create/list/patch/delete tasks, including defaults, valid title/description/priority/status changes, omitted PATCH fields, and empty PATCH rejection.
@@ -49,7 +49,7 @@ Assertions:
 Requirement: Provide the real project-selection and Kanban page structure with task form, three columns, empty/error states, and controls needed for create/edit/move/delete flows.
 Level: integration
 Test file: taskboard/tests/test_ui_content.py
-Bead ID: pending
+Bead ID: te-zch
 Phase: phase-2
 Scenarios:
 - GET / contains TaskBoard, project selector/list, project and task forms, priority controls, To Do/Doing/Done headings, and empty/error regions.
