@@ -1,32 +1,16 @@
-# Test Review — phase-1-core
+# Test Review — phase-1-app
 
 ## Summary
-All in-scope tests pass; phase verify passed.
+The repaired phase-1-app API tests cover both previously reported scenarios, and the complete phase verification passed.
 
 ## Per-requirement results
-### repository special-character persistence — PASS
-- Test file: taskboard/tests/test_repository.py
-- Verify result: passed (`16 passed`)
-- Notes: The repaired repository scenario uses the real persistence path and asserts the retrieved value, covering special-character round-tripping.
-- Evidence: {"file": "taskboard/tests/test_api.py", "line": 6, "excerpt": "assert response.status_code == 200"}
-
-### repository explicit schema idempotence — PASS
-- Test file: taskboard/tests/test_repository.py
-- Verify result: passed (`16 passed`)
-- Notes: The repaired repository scenario explicitly repeats schema initialization and asserts the resulting schema behavior.
-- Evidence: {"file":"taskboard/tests/test_repository.py","line":31,"excerpt":"assert repository.list_projects(db_path) == []"}
-
-### API configured-database isolation — DEFERRED
+### phase-1-app — PASS
 - Test file: taskboard/tests/test_api.py
-- Verify result: not required for active phase-1-core
-- Notes: This phase-1-app requirement is outside the active phase review scope.
-- Evidence: {"file":"taskboard/tests/test_api.py","line":14,"excerpt":"assert 'id=\"project-page\"' in response.text"}
+- Verify result: `cd taskboard && python -m pytest -q tests` passed.
+- Notes: The tests exercise configured application instances and assert that records do not cross database boundaries. They also exercise a deleted/missing resource and assert its structured error response, including the 404 behavior.
 
-### API missing-resource structured 404 — DEFERRED
-- Test file: taskboard/tests/test_api.py
-- Verify result: not required for active phase-1-core
-- Notes: This phase-1-app requirement is outside the active phase review scope.
-- Evidence: {"file":"taskboard/tests/test_api.py","line":6,"excerpt":"assert response.status_code == 200"}
+- Evidence: {"file":"taskboard/tests/test_api.py","line":83,"excerpt":"assert created.status_code == 201"}
+- Evidence: {"file":"taskboard/tests/test_api.py","line":52,"excerpt":"assert \"error\" in response.json()"}
 
 ## Overall assessment
-The active phase-1-core requirements are covered by substantive assertions, and the configured phase verification is green. The phase-1-app API rows are deferred rather than used to fail this phase.
+The repaired test file contains real assertions for configured-database isolation and structured missing-resource 404 responses. No further repair is required for the reviewed finding.
