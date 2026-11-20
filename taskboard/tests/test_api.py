@@ -25,6 +25,18 @@ def test_static_assets_are_reachable(client):
     assert stylesheet.content
 
 
+def test_static_assets_content_types(client):
+    """SPEC: canonical content types for static assets."""
+    app_resp = client.get("/static/app.js")
+    css_resp = client.get("/static/style.css")
+    assert "text/javascript" in app_resp.headers["content-type"], (
+        f"expected text/javascript, got {app_resp.headers['content-type']}"
+    )
+    assert "text/css" in css_resp.headers["content-type"], (
+        f"expected text/css, got {css_resp.headers['content-type']}"
+    )
+
+
 def test_projects_start_empty(client):
     response = client.get("/api/projects")
     assert response.status_code == 200
@@ -56,6 +68,22 @@ def test_invalid_project_payload_returns_error(client):
     assert "error" in missing.json()
 
 
+def test_project_name_max_length_rejection(client):
+    """SPEC: project name max 80 characters; overlong → 400, not 422."""
+    response = client.post("/api/projects", json={"name": "x" * 81})
+    assert response.status_code == 400, f"expected 400, got {response.status_code}"
+    assert "error" in response.json()
+
+
+def test_projects_ascending_id_order(client):
+    """SPEC: projects listed ordered by id ASC."""
+    project1 = client.post("/api/projects", json={"name": "Alpha"}).json()
+    project2 = client.post("/api/projects", json={"name": "Beta"}).json()
+    listed = client.get("/api/projects").json()
+    assert listed[0]["id"] < listed[1]["id"]
+    assert listed == [project1, project2]
+
+
 def test_delete_project_returns_empty_204_and_404_for_missing(client):
     project = client.post("/api/projects", json={"name": "Temporary"}).json()
 
@@ -66,6 +94,23 @@ def test_delete_project_returns_empty_204_and_404_for_missing(client):
     missing = client.delete(f"/api/projects/{project['id']}")
     assert missing.status_code == 404
     assert "error" in missing.json()
+
+
+def test_index_contains_taskboard_heading(client):
+    """SPEC: rendered HTML must contain the TaskBoard heading."""
+    response = client.get("/")
+    assert response.status_code == 200
+    assert "text/html" in response.headers["content-type"]
+    assert "TaskBoard" in response.text
+
+
+def test_index_contains_project_form(client):
+    """SPEC: rendered HTML must contain the project form region."""
+    response = client.get("/")
+    assert response.status_code == 200
+    assert "text/html" in response.headers["content-type"]
+    assert 'id="project-form"' in response.text
+    assert 'id="project-form-region"' in response.text
 
 
 def test_configured_databases_are_isolated(tmp_path, monkeypatch):
