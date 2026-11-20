@@ -39,7 +39,7 @@ Assertions:
 Requirement: The phase-2 delivery adds the specified task HTTP behavior and user-visible task interactions.
 Level: integration
 Test file: taskboard/tests/test_api.py
-Bead ID: pending
+Bead ID: te-c2c
 Phase: phase-2
 Scenarios:
 - Exercise each task route documented for phase 2, including project scoping, creation, listing, update, and deletion.
