@@ -162,7 +162,7 @@ def create_app(db_path: str | None = None) -> FastAPI:
             updates["title"] = str(updates["title"]).strip()
             if not updates["title"]:
                 return JSONResponse(status_code=400, content={"error": "title is required"})
-        if "status" in updates and updates["status"] not in {"todo", "in_progress", "done"}:
+        if "status" in updates and updates["status"] not in {"todo", "doing", "done"}:
             return JSONResponse(status_code=400, content={"error": "invalid status"})
         if "priority" in updates and updates["priority"] not in {"low", "medium", "high"}:
             return JSONResponse(status_code=400, content={"error": "invalid priority"})
