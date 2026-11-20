@@ -34,7 +34,7 @@ Assertions:
 ### phase-2
 Requirement: Add task persistence and API behavior, project selection, task creation/edit/delete, three Kanban columns, move-forward behavior, visible empty/error states, and safe rendering while preserving Phase 1 behavior.
 Level: integration
-Test file: taskboard/tests/test_api.py
+Test file: taskboard/tests/test_api.py, taskboard/tests/test_ui_content.py
 Bead ID: te-c2c
 Phase: phase-2
 Scenarios:
