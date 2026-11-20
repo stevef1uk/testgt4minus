@@ -98,3 +98,25 @@ def test_project_delete_cascades_tasks_and_missing_deletes_are_false(db_path):
     assert repository.list_tasks(project["id"], db_path=db_path) == []
     assert repository.delete_project(project["id"], db_path=db_path) is False
     assert repository.delete_task(task["id"], db_path=db_path) is False
+
+
+def test_special_characters_round_trip_without_sql_interpolation(db_path):
+    project_name = "R&D / O'Reilly — 项目"
+    task_title = 'Fix "quoted" & escaped — 测试'
+
+    project = repository.create_project(project_name, db_path=db_path)
+    task = repository.create_task(project["id"], task_title, db_path=db_path)
+
+    assert repository.list_projects(db_path) == [project]
+    assert repository.list_tasks(project["id"], db_path=db_path) == [task]
+    assert project["name"] == project_name
+    assert task["title"] == task_title
+
+
+def test_schema_initialization_is_explicitly_idempotent(db_path):
+    assert repository.list_projects(db_path) == []
+    assert repository.list_projects(db_path) == []
+
+    project = repository.create_project("After repeated initialization", db_path=db_path)
+
+    assert repository.list_projects(db_path) == [project]
