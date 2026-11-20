@@ -19,6 +19,12 @@ only to taskboard/repository.py; pure validation and row mapping belong to
 taskboard/models.py; HTTP routes and dependency wiring belong to
 taskboard/main.py; and browser behavior belongs to taskboard/static/app.js.
 
+The HTTP contract is intentionally limited to the SPEC routes: GET /, GET /api/projects, POST /api/projects, DELETE /api/projects/{project_id}, GET /api/projects/{project_id}/tasks, POST /api/projects/{project_id}/tasks, PATCH /api/tasks/{task_id}, and DELETE /api/tasks/{task_id}. No singular-project route, alternate task prefix, or method alias is part of the contract. The root response serves the template and the mounted static directory at /static; API responses are JSON and use the SPEC status codes for validation, missing resources, and malformed identifiers.
+
+The database path is resolved once by create_app: a nonempty explicit db_path wins, otherwise a nonempty TASKBOARD_DB_PATH wins, otherwise the application uses taskboard/taskboard.db relative to the repository root. Tests always pass an isolated temporary path. The application must create parent directories before connecting, must not derive a second path from the process working directory, and must never put a database under taskboard/tests or a temporary test directory unless that path was explicitly supplied.
+
+The delivery checks are native repository checks and do not require Docker or a Docker daemon. No Dockerfile, compose file, container image, or container-only host name is an implicit deliverable; a judge must invoke the documented Python and Playwright commands from the repository root with taskboard/ as the application directory.
+
 ## Planned file layout
 
 Every concrete SPEC and workflow-profile deliverable is listed with the
