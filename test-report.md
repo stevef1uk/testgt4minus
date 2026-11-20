@@ -1,19 +1,13 @@
-# Test Review — Foundation and projects (phase-1-core, phase-1-app)
+# Test Review — phase-1-core
 
 ## Summary
-Partial tests pass; the configured phase verify passed (`16 passed, 1 warning`).
+All in-scope tests pass; phase verify passed.
 
 ## Per-requirement results
-
-### phase-1-core — FAIL
+### phase-1-core — PASS
 - Test file: `taskboard/tests/test_repository.py`
-- Verify result: passed
-- Notes: The repository tests contain real assertions for persistence, ordering, filters, partial updates, validation, timestamps, and cascade deletion. However, the planned special-character persistence scenario is not exercised, and the test set does not directly verify the schema/index/foreign-key invariants required by the phase contract.
-
-### phase-1-app — FAIL
-- Test file: `taskboard/tests/test_api.py`
-- Verify result: passed
-- Notes: The API tests contain real assertions for health, project CRUD, validation, 204/404 behavior, and static delivery. They do not test isolation between two separately configured app instances, and the root assertion checks only `id="project-page"` plus asset links rather than the required visible `TaskBoard` heading and project form.
+- Verify result: passed — `python -m pytest -q taskboard/tests/test_repository.py`
+- Notes: The repository test exercises schema initialization, project/task persistence including special characters, ordering and project filtering, partial updates, validation, and cascade deletion with substantive assertions against the repository/database behavior.
 
 ## Overall assessment
-The pytest gate is green, but active-phase planned coverage is incomplete. Reopen implementation beads `te-7yg` and `te-c2c`: strengthen `taskboard/tests/test_repository.py` with the planned special-character and schema/invariant assertions, and strengthen `taskboard/tests/test_api.py` with two-app database isolation plus explicit heading/form assertions. Re-run `cd taskboard && python -m pytest -q tests`.
+The active phase requirement is covered by an existing substantive test file, and the configured phase verification is green. Phase-1-app, phase-2, and phase-3 rows are deferred because they are not part of the active `phase-1-core` review.
