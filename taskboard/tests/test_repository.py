@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pytest
 
@@ -39,7 +39,9 @@ def test_projects_have_ascending_ids_and_utc_timestamps(db_path):
 
     assert first["id"] < second["id"]
     assert first["name"] == "First"
-    assert datetime.fromisoformat(first["created_at"]).tzinfo is not None
+    created_at = datetime.fromisoformat(first["created_at"])
+    assert created_at.tzinfo is not None
+    assert created_at.utcoffset() == timezone.utc.utcoffset(created_at)
     assert repository.list_projects(db_path) == [first, second]
 
 
