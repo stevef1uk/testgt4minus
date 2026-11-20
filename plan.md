@@ -1,83 +1,63 @@
-# Implementation plan
+# Phase 1 implementation plan: runnable Taskboard app
 
-## Active phase and verification
-
-This plan covers only delivery subphase `phase-1-app` (Foundation and
-projects: runnable app). It implements the six active required paths and
-extends the completed core phase; it does not create beads or acceptance work
-for Phase 2 task/Kanban behavior or Phase 3 browser tooling. The exact phase
-gate is:
-
-`cd taskboard && python -m pytest -q tests`
-
-The implementation must preserve the core repository contract while making a
-real runnable FastAPI application. Acceptance is based on SPEC.md and
-architecture.md § phase-1-app: exact health response, project CRUD, selected
-database wiring, real root HTML, and mounted static assets. The API tests must
-use an isolated temporary database and substantive state assertions.
+The phase-1 deliverable is the six active files below. Work only on these paths and preserve the later-phase ownership described in architecture.md. The required verification command for every bead and for the phase is `cd taskboard && python -m pytest -q tests`.
 
 ## Bead map
 
 ### te-hky: taskboard/main.py
-- Scope: Implement `create_app(db_path: str | None = None) -> FastAPI`, module-level `app`, app-state database-path wiring, schema initialization, Jinja template rendering, static mounting, and the Phase-1 project/health HTTP routes.
-- Architecture: architecture.md § HTTP + entrypoint integration and § phase-1-app. Keep DDL in `taskboard/db.py`, SQL in `taskboard/repository.py`, and route/dependency wiring here.
-- Interfaces: Export `create_app(db_path: str | None = None) -> FastAPI` and module-level `app`; implement `GET /api/health` returning exactly `{"status":"ok"}`, `GET /api/projects`, `POST /api/projects` with 201, `DELETE /api/projects/{project_id}` with 204, `GET /`, and mounted `/static/app.js` and `/static/style.css`. Application errors use the SPEC `{"error":"..."}` format with 400/404; malformed integer paths retain FastAPI 422.
-- Depends on: taskboard/db.py; taskboard/models.py; taskboard/repository.py; taskboard/templates/index.html; taskboard/static/app.js; taskboard/static/style.css
-- Consumed by: taskboard/tests/conftest.py; taskboard/tests/test_api.py
-- Acceptance: Explicit `db_path` wins, then nonempty `TASKBOARD_DB_PATH`, then the documented fallback; app initialization creates the schema and stores the selected path without a shared mutable connection. Health JSON is exact. Project creation trims and validates names, returns the repository project shape with 201, listing is ascending by ID, deletion returns empty 204 and 404 for a missing project, and root/static responses are real and accessible. Do not add task routes in this phase.
+- Scope: Implement the FastAPI application factory, SQLite-backed task persistence, request/response handling, and static/template mounting assigned to this phase.
+- Architecture: Follow architecture.md § Application entrypoint and § persistence/API contract; use the SPEC data model and HTTP table exactly.
+- Interfaces: Export `create_app(database_path: str | None = None)` and provide the SPEC routes for the HTML page and task JSON API. Keep the documented task fields, status values, and JSON response shapes.
+- Depends on: taskboard/templates/index.html, taskboard/static/app.js, taskboard/static/style.css
+- Consumed by: taskboard/tests/conftest.py, taskboard/tests/test_api.py
+- Acceptance: A fresh database is usable without manual setup; the app serves the board page and exposes the SPEC task-list create/update/delete behavior; requests persist across app instances; invalid or missing task input receives the SPEC-described HTTP response; responses contain the documented task fields.
 - Verify: `cd taskboard && python -m pytest -q tests`
 
 ### te-fzd: taskboard/templates/index.html
-- Scope: Provide the real Phase-1 server-rendered TaskBoard page shell and project-oriented controls that can be extended in later phases.
-- Architecture: architecture.md § Planned file layout, module/bead ownership, and § phase-1-app. The template is served by `GET /` and references canonical static assets.
-- Interfaces: HTML document consumed by `taskboard/main.py`; reference `/static/app.js` and `/static/style.css`; include the visible `TaskBoard` heading, project creation form/control, and a project selector/list region. Keep markup extensible for later task UI without implementing database calls or inline application logic.
+- Scope: Provide the complete board document and the semantic controls/containers required by the SPEC.
+- Architecture: Follow architecture.md § frontend template and the SPEC UI requirements; reference the phase static stylesheet and JavaScript asset.
+- Interfaces: Supply the board root, task creation form, task list container, filter/status controls, and script/style links expected by app.js.
 - Depends on: <none>
-- Consumed by: taskboard/main.py; taskboard/tests/test_api.py
-- Acceptance: `GET /` returns content type HTML containing a real TaskBoard page rather than a placeholder, a project form/control, and both canonical static references. The page is valid enough for the Phase-1 content assertions and does not claim unsupported Phase-2 task behavior.
-- Verify: `cd taskboard && python -m pytest -q tests`
-
-### te-sxk: taskboard/static/app.js
-- Scope: Supply the Phase-1 browser asset served from the canonical static directory; establish the basic project-page client hook without introducing out-of-phase task/Kanban features.
-- Architecture: architecture.md § Browser client and § phase-1-app; browser behavior belongs in this file and user content must later be rendered safely.
-- Interfaces: Static asset available at `GET /static/app.js`, referenced by `taskboard/templates/index.html`, and valid JavaScript. Any Phase-1 project-page wiring must use the documented `/api/projects` contract; no alternate API paths.
-- Depends on: <none>
-- Consumed by: taskboard/templates/index.html
-- Acceptance: StaticFiles serves a nonempty JavaScript response with 200. The asset does not require a frontend build, framework, or external service, and does not invent task routes before their owning phase.
+- Consumed by: taskboard/static/app.js, taskboard/tests/test_api.py
+- Acceptance: The served page contains the documented title, form fields, task-board container, status/filter controls, and local static asset references; no backend-only behavior is duplicated in the template.
 - Verify: `cd taskboard && python -m pytest -q tests`
 
 ### te-rpb: taskboard/static/style.css
-- Scope: Supply the Phase-1 real page styling asset, including readable layout and project form/list presentation while remaining extensible for later Kanban work.
-- Architecture: architecture.md § Static styling and § phase-1-app; styling remains separate from application data and JavaScript behavior.
-- Interfaces: Static asset available at `GET /static/style.css` and referenced by `taskboard/templates/index.html`; provide selectors for the Phase-1 page shell and controls.
-- Depends on: <none>
-- Consumed by: taskboard/templates/index.html
-- Acceptance: StaticFiles serves nonempty CSS with 200, and the stylesheet supports a usable real TaskBoard page without replacing controls or adding out-of-scope dependencies.
+- Scope: Implement the SPEC visual layout for the board, form, task cards, status presentation, filters, and responsive behavior.
+- Architecture: Follow architecture.md § static presentation; target the classes and IDs owned by index.html/app.js.
+- Interfaces: Define selectors for the board shell, task form, task list/cards, status controls, and the documented status-specific visual states.
+- Depends on: taskboard/templates/index.html
+- Consumed by: taskboard/templates/index.html, taskboard/tests/test_api.py
+- Acceptance: The board is readable and usable with the documented controls; task cards and their status states are visually distinct; the stylesheet is loaded from the app's static route and does not require external assets.
+- Verify: `cd taskboard && python -m pytest -q tests`
+
+### te-sxk: taskboard/static/app.js
+- Scope: Implement browser-side loading, rendering, creation, status editing, deletion, filtering, and form interaction required by the SPEC.
+- Architecture: Follow architecture.md § client behavior and the API paths/shapes in the SPEC HTTP table; use the DOM hooks from index.html.
+- Interfaces: Call the documented task API routes, render the returned task fields, submit the documented create/update/delete actions, and maintain the selected filter/status view.
+- Depends on: taskboard/templates/index.html
+- Consumed by: taskboard/tests/test_api.py
+- Acceptance: Initial load displays API tasks; submitting the form creates and displays a task; the documented status control updates a task; delete removes it; filtering shows only the selected status; empty/error states follow the SPEC behavior.
 - Verify: `cd taskboard && python -m pytest -q tests`
 
 ### te-j3i: taskboard/tests/conftest.py
-- Scope: Implement the isolated FastAPI test client fixture for Phase-1 API tests.
-- Architecture: architecture.md § Unit tests and module/bead ownership. Use the validated temporary-path pattern: `tmp_path / "taskboard.sqlite3"`, `TASKBOARD_DB_PATH`, reload of `taskboard.main`, `create_app(str(database_path))`, and `TestClient`.
-- Interfaces: Export pytest fixture `client` yielding a FastAPI `TestClient`; each test receives a fresh temporary SQLite database and exercises the real app routes.
+- Scope: Provide the isolated pytest client fixture and per-test database configuration described by architecture.md.
+- Architecture: Follow architecture.md § test harness; isolate SQLite under pytest's temporary directory and construct the application through its public factory.
+- Interfaces: Export the pytest `client` fixture, set `TASKBOARD_DB_PATH` for each test, reload `taskboard.main`, and yield a FastAPI TestClient.
 - Depends on: taskboard/main.py
 - Consumed by: taskboard/tests/test_api.py
-- Acceptance: Tests never touch the runtime database, the fixture initializes the app against the temporary path, and the yielded client can test health, project CRUD, root HTML, and static delivery.
+- Acceptance: Each test receives an isolated client/database, the fixture works with the public `create_app` contract, and tests do not depend on repository or developer machine state.
 - Verify: `cd taskboard && python -m pytest -q tests`
 
 ### te-c2c: taskboard/tests/test_api.py
-- Scope: Write meaningful Phase-1 API and app-content regression tests, following TDD and covering only the runnable app/project contract owned by this phase.
-- Architecture: architecture.md § Unit tests, § Integration and testing, and § phase-1-app. Tests assert real responses and persisted state rather than placeholders or status-only checks.
-- Interfaces: Pytest tests consume fixture `client` and assert the HTTP contracts for `GET /api/health`, `GET/POST/DELETE /api/projects`, `GET /`, and `/static/app.js` plus `/static/style.css`.
-- Depends on: taskboard/tests/conftest.py; taskboard/main.py; taskboard/templates/index.html; taskboard/static/app.js; taskboard/static/style.css
+- Scope: Implement the phase API acceptance suite from SPEC and architecture.md using the shared client fixture.
+- Architecture: Follow architecture.md § test coverage and the SPEC HTTP table; test externally observable behavior rather than private implementation details.
+- Interfaces: Exercise the page route and every phase task API operation, including documented request payloads, response fields, persistence, status changes, deletion, and specified validation responses.
+- Depends on: taskboard/main.py, taskboard/tests/conftest.py, taskboard/templates/index.html, taskboard/static/app.js, taskboard/static/style.css
 - Consumed by: <none>
-- Acceptance: Assert exact health JSON; create at least two projects and prove returned IDs and ascending list order; prove names are trimmed and invalid empty names return application-level 400; delete returns 204 with no body and a subsequent missing-project delete returns 404; assert root HTML contains `TaskBoard`, the project form/control, and real static references; assert both static assets return 200 and nonempty content. Do not test task routes, filters, Kanban movement, or Playwright in this phase.
+- Acceptance: Tests prove the page is served, task creation returns the documented result, list returns created tasks, update changes the documented status/data, delete removes the task, data persists for the configured database, and SPEC-defined invalid requests return their required status/body.
 - Verify: `cd taskboard && python -m pytest -q tests`
 
-## Dependency and delivery boundaries
+## Phase verification
 
-The six beads extend the completed `phase-1-core` exports in order: the app
-entrypoint consumes database, model, and repository behavior; its fixture
-consumes the app; and API tests consume the fixture and real HTTP boundary.
-The template and static assets are prerequisites of root serving and are
-tested through that boundary. Later phases may extend these canonical files,
-but this phase must not add task repository operations, task API routes,
-Kanban interactions, filter controls, Playwright files, or alternate paths.
+Run exactly `cd taskboard && python -m pytest -q tests`. The phase is complete only when the full suite passes and the six required paths exist with the interfaces and behavior above. Do not implement later-phase files or features not specified by SPEC.md.
