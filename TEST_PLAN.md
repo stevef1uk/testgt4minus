@@ -25,10 +25,10 @@ Phase: phase-1-app
 Scenarios:
 - Create an isolated app client, verify `GET /api/health` returns the exact health object, and verify project create/list/delete round trips with ascending IDs.
 - Submit empty or whitespace-only project names and delete a missing project; inspect application error JSON and status codes.
-- Request `/` and both static assets, checking the real TaskBoard page and nonempty served files.
+- Request `/` and both static assets, checking the real basic HTML TaskBoard page and nonempty served files; no task UI is required in this phase.
 Assertions:
 - Valid project creation returns 201, deletion returns 204 with an empty body, missing deletion returns 404, and invalid names return 400 with an `error` field.
-- Root content is HTML containing `TaskBoard`, the project form, task form, and `To Do`, `Doing`, and `Done`; static responses are 200 and nonempty.
+- Root content is real HTML containing `TaskBoard` and the project form, without requiring the phase-2 task form or Kanban columns; static responses are 200 and nonempty.
 - Tests use a fresh temporary SQLite path and never touch the runtime database.
 
 ### phase-2
