@@ -159,7 +159,7 @@ delivery_phases:
     qa_verify_command: "cd taskboard && python -m pytest -q tests"
     depends_on: [phase-1-core]
     file_dependencies:
-      taskboard/main.py: [taskboard/db.py, taskboard/models.py, taskboard/repository.py, taskboard/static/style.css]
+      taskboard/main.py: [taskboard/db.py, taskboard/models.py, taskboard/repository.py]
       taskboard/tests/conftest.py: [taskboard/main.py]
       taskboard/tests/test_api.py: [taskboard/tests/conftest.py, taskboard/main.py]
   - id: phase-2
