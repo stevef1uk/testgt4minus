@@ -18,22 +18,23 @@ Assertions:
 - Invalid values raise the documented validation errors.
 - Updating one field preserves the other fields, and deleting a project removes its tasks.
 
+
+
 ### phase-1-app
-Requirement: The application exposes the documented health and project HTTP routes, returns structured errors for invalid or missing resources, isolates each app instance to its configured database, and serves the required project form page and static assets.
+Requirement: The runnable application exposes the health and project HTTP routes, initializes the configured database, renders the real project page, and serves both static assets.
 Level: integration
 Test file: taskboard/tests/test_api.py
 Bead ID: te-c2c
 Phase: phase-1-app
 Scenarios:
-- GET the health route and list projects from an isolated temporary database.
-- POST a valid project, then GET the collection and DELETE the project; repeat deletion to exercise the 404 response.
-- POST missing and blank project names and verify the documented error response.
-- Request the root page and static asset, including the required visible heading and project form.
+- Create an isolated app with a temporary database and verify the health endpoint returns the exact documented JSON.
+- Create trimmed projects, list them in ascending ID order, delete one successfully, and request a missing project deletion.
+- Submit empty or whitespace-only project names and verify structured validation errors; verify an empty project list is an empty JSON array.
+- Request the root page and both canonical static assets and verify the rendered project form and nonempty responses.
 Assertions:
-- Health and project routes return the documented status codes and decoded JSON values.
-- Successful deletion has status 204 and an empty body; invalid input and missing resources return status 400/404 with an error field.
-- A fresh configured database does not expose data from another app instance.
-- The root response contains the required heading/form and the static asset is delivered successfully.
+- Health and project endpoints return the documented decoded JSON values and status codes; successful deletion is 204 with an empty body, while invalid and missing operations return the documented error shape.
+- Project names are trimmed and persisted, IDs remain ordered, and isolated app instances do not share database state.
+- The root response is real HTML containing the TaskBoard heading and project form, and `/static/app.js` and `/static/style.css` return 200 with nonempty content.
 
 ### phase-2
 Requirement: The phase-2 delivery adds the specified task HTTP behavior and user-visible task interactions.
