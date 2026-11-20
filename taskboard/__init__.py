@@ -1,3 +1,3 @@
-"""TaskBoard application package metadata."""
+"""TaskBoard application package."""
 
 __version__ = "0.1.0"
