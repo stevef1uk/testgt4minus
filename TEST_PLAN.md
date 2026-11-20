@@ -9,13 +9,14 @@ Test file: taskboard/tests/test_repository.py
 Bead ID: te-7yg
 Phase: phase-1-core
 Scenarios:
-- Initialize the database idempotently; verify empty results, foreign-key cascade support, and ascending project IDs.
+- Initialize the database idempotently with a temporary SQLite path; verify empty project/task results, foreign-key cascade support, and ascending project IDs.
 - Create projects and tasks with trimmed values, defaults, UTC timestamps, and parameterized writes.
 - Filter tasks by status and priority, update partially, and verify omitted fields persist.
 - Delete projects with cascading tasks and reject invalid or overlong values.
 Assertions:
-- Rows have exact fields, positive IDs, UTC timestamps, and stable ordering.
-- Defaults, filters, partial updates, schema setup, validation, and cascade deletion produce specified state.
+- Repository rows map to the specified fields with positive IDs, UTC timestamps, and stable ordering.
+- Defaults, filters, partial updates, schema setup, validation, and cascade deletion produce the specified persisted state.
+- The test uses an isolated temporary database and does not modify runtime taskboard.db.
 
 ### phase-1-app
 Requirement: Provide app creation, database selection, health and project routes, HTML/static delivery, isolated fixtures, and project API coverage.
