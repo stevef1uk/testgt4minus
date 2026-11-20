@@ -12,6 +12,21 @@ def db_path(tmp_path):
     return str(tmp_path / "taskboard.sqlite3")
 
 
+def test_invalid_and_overlong_names_are_rejected(db_path):
+    with pytest.raises(ValueError):
+        repository.create_project("   ", db_path=db_path)
+
+    with pytest.raises(ValueError):
+        repository.create_project("x" * 101, db_path=db_path)
+
+    project = repository.create_project("Project", db_path=db_path)
+    with pytest.raises(ValueError):
+        repository.create_task(project["id"], "", db_path=db_path)
+
+    with pytest.raises(ValueError):
+        repository.create_task(project["id"], "x" * 101, db_path=db_path)
+
+
 def test_empty_lists_and_idempotent_initialization(db_path):
     assert repository.list_projects(db_path) == []
     assert repository.list_tasks(999, db_path=db_path) == []
