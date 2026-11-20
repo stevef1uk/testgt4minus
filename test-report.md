@@ -1,17 +1,33 @@
-# Test Review — phase-1-core / phase-1-app
+# Test Review — phase-1-app
 
 ## Summary
-Active requirements: 2; phase verify: passed
+All in-scope tests pass; phase verify passed.
 
 ## Per-requirement results
-### phase-1-core — PASS
+### UI-1 — PASS
+- Test file: taskboard/tests/test_ui_content.py
+- Verify result: passed
+- Notes: Asserts required HTML regions and controls are present.
+
+### UI-2 — PASS
+- Test file: taskboard/tests/test_ui_content.py
+- Verify result: passed
+- Notes: Asserts static CSS and JavaScript assets are loaded.
+
+### UI-3 — PASS
+- Test file: taskboard/tests/test_ui_content.py
+- Verify result: passed
+- Notes: Asserts safe text rendering and required project API route usage.
+
+### R-1 — PASS
 - Test file: taskboard/tests/test_repository.py
 - Verify result: passed
-- Notes: phase=phase-1-core; exists=True; substantive assertions=True.
-### phase-1-app — PASS
+- Notes: Repository tests exercise persistence behavior with real assertions.
+
+### R-2 — PASS
 - Test file: taskboard/tests/test_api.py
 - Verify result: passed
-- Notes: phase=phase-1-app; exists=True; substantive assertions=True.
+- Notes: API tests exercise application wiring and response contracts with real assertions.
 
 ## Overall assessment
-All active-phase planned tests exist, contain substantive assertions, and the configured repository verification passes.
+All active-phase requirements have existing substantive tests and the configured phase verification is green.

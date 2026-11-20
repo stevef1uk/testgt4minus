@@ -149,7 +149,8 @@
       }
     ],
     "explicit_delivery_contract": true,
-    "active_phase_id": "phase-2",
+    "active_phase_id": "phase-1-core",
+    "rewound_from_phase_id": "phase-2",
     "completed_phase_ids": [
       "phase-1-core",
       "phase-1-app"
