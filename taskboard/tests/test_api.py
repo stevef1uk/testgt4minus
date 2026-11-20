@@ -90,7 +90,7 @@ def test_configured_databases_are_isolated(tmp_path, monkeypatch):
 
 
 def test_missing_project_returns_structured_404(client):
-    response = client.get("/api/projects/999999")
+    response = client.delete("/api/projects/999999")
     assert response.status_code == 404
     assert response.headers["content-type"].startswith("application/json")
     assert response.json() == {"error": "project not found"}
