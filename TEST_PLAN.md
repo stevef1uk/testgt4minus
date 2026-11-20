@@ -3,72 +3,63 @@
 ## Requirements → tests
 
 ### phase-1-core
-Requirement: Deliver the SQLite foundation, validation/mapping, project and task schema invariants, repository operations, and isolated repository coverage.
+Requirement: Deliver the SQLite schema, validation/mapping, project and task repository foundations with idempotent initialization, foreign keys, busy timeout, UTC timestamps, deterministic ordering, filtering, partial updates, cascade deletion, and parameterized writes.
 Level: unit
 Test file: taskboard/tests/test_repository.py
 Bead ID: te-7yg
 Phase: phase-1-core
 Scenarios:
-- Initialize the database idempotently with a temporary SQLite path; verify empty project/task results, foreign-key cascade support, and ascending project IDs.
-- Create projects and tasks with trimmed values, defaults, UTC timestamps, and parameterized writes.
-- Filter tasks by status and priority, update partially, and verify omitted fields persist.
-- Delete projects with cascading tasks and reject invalid or overlong values.
+- Initialize a new database repeatedly and verify empty project/task collections without schema errors.
+- Create projects and tasks, verify ascending IDs, UTC-offset timestamps, task defaults, status/priority filters including AND composition, and preservation of omitted patch fields.
+- Delete a project and verify its tasks are removed by the foreign-key cascade.
 Assertions:
-- Repository rows map to the specified fields with positive IDs, UTC timestamps, and stable ordering.
-- Defaults, filters, partial updates, schema setup, validation, and cascade deletion produce the specified persisted state.
-- The test uses an isolated temporary database and does not modify runtime taskboard.db.
+- Repository results match the specified project/task JSON fields and deterministic ordering.
+- Invalid values are rejected by the model/repository boundary, writes do not interpolate request data, and cascade/filter/update behavior changes persisted state as specified.
 
 ### phase-1-app
-Requirement: Provide app creation, database selection, health and project routes, HTML/static delivery, isolated fixtures, and project API coverage.
+Requirement: Provide a runnable FastAPI app factory with exact health and project API routes, isolated database selection, real HTML root rendering, and mounted static assets.
 Level: integration
 Test file: taskboard/tests/test_api.py
-Bead ID: te-7yg
+Bead ID: te-c2c
 Phase: phase-1-app
 Scenarios:
-- Use a temporary database; verify health, project create/list/delete, invalid names, and missing-project 404.
-- Verify root HTML, both static assets, content types, forms, heading, and nonempty bodies.
-- Verify 204 deletion is bodyless and tests do not modify runtime taskboard.db.
+- Create an isolated app client, verify `GET /api/health` returns the exact health object, and verify project create/list/delete round trips with ascending IDs.
+- Submit empty or whitespace-only project names and delete a missing project; inspect application error JSON and status codes.
+- Request `/` and both static assets, checking the real TaskBoard page and nonempty served files.
 Assertions:
-- Responses use specified status codes and decoded JSON error objects.
-- The selected database is initialized and real HTML/assets are served.
+- Valid project creation returns 201, deletion returns 204 with an empty body, missing deletion returns 404, and invalid names return 400 with an `error` field.
+- Root content is HTML containing `TaskBoard`, the project form, task form, and `To Do`, `Doing`, and `Done`; static responses are 200 and nonempty.
+- Tests use a fresh temporary SQLite path and never touch the runtime database.
 
 ### phase-2
-Requirement: Add task repository operations, task routes, validation, filtering, and exact task API behavior.
+Requirement: Add task persistence and API behavior, project selection, task creation/edit/delete, three Kanban columns, move-forward behavior, visible empty/error states, and safe rendering while preserving Phase 1 behavior.
 Level: integration
 Test file: taskboard/tests/test_api.py
-Bead ID: te-7yg
+Bead ID: te-c2c
 Phase: phase-2
 Scenarios:
-- Create, list, patch, and delete tasks with defaults, valid updates, omitted PATCH fields, and empty PATCH rejection.
-- Reject invalid fields, filters, nulls, and overlong values; return 404 for missing resources.
-- Verify empty arrays, bodyless 204 responses, conjunctive filters, ascending IDs, and project-delete cascades.
+- Create a project and task, list tasks, patch each supported field while preserving omitted fields, and delete the task.
+- Verify missing project/task responses, invalid title/description/status/priority values, empty PATCH rejection, empty lists, and composed query filters with ID ordering.
+- Verify project selection and task UI content through the required content-test surface, including forms, columns, empty/error regions, and static assets.
 Assertions:
-- Responses contain exact decoded fields and specified statuses; errors are {"error": "..."}.
-- Persisted task state and filtering match the requested operations.
+- Task creation returns 201 with `todo` status and default `medium` priority; patch returns 200 and does not permit project reassignment.
+- Invalid task inputs return 400, missing resources return 404, deletes return bodyless 204, and project deletion removes its tasks.
+- The UI exposes task title/description/priority controls, Move forward/Edit/Delete controls, and hides or disables Move forward for done tasks; user text is inserted safely.
 
-Requirement: Provide the real project-selection and Kanban page structure with task form, three columns, empty/error states, and controls for create/edit/move/delete.
-Level: integration
-Test file: taskboard/tests/test_ui_content.py
-Bead ID: te-7yg
-Phase: phase-2
-Scenarios:
-- Verify root content contains TaskBoard, project controls, forms, priority controls, three column headings, and empty/error regions.
-- Verify app.js and style.css are nonempty and expose task controls and responsive presentation.
-Assertions:
-- The response is real text/html with every required visible region.
-- Controls expose selection, editing, deletion, and move-forward behavior.
+
 
 ### phase-3
-Requirement: Complete status and priority filter behavior and release browser coverage with independent host-server scenarios.
+Requirement: Complete status and priority filters and provide independent Playwright browser coverage for initial rendering, task lifecycle, and priority filtering against the running server.
 Level: ui
 Test file: taskboard/playwright/taskboard.spec.ts
 Bead ID: pending
 Phase: phase-3
 Scenarios:
-- On isolated load verify the heading and all three columns.
-- Create unique tasks, move todo to doing to done, verify cards, and delete them.
-- Filter two unique-priority tasks by high, then reset to all; clean up and use 127.0.0.1:8080.
+- Load the running UI and verify the TaskBoard heading and all three Kanban column headings.
+- Create a uniquely named project and task, move it from To Do to Doing to Done, delete it, and verify each visible state change.
+- Create two differently prioritized tasks, filter to high priority, verify only the high-priority card is shown, then reset the filter and verify both cards return.
 Assertions:
-- Browser assertions inspect cards and column placement, not only statuses.
-- Filtering hides and restores cards independently of pre-existing data.
-- The canonical Playwright command and host-server configuration are supported.
+- Browser assertions inspect real task titles and column placement, not only status codes or placeholder visibility.
+- Each scenario uses unique data and cleanup, remains independent of test order, and verifies that filter query parameters exclude and restore the appropriate cards.
+- Done tasks hide or disable Move forward; browser tests run through the canonical Playwright configuration and host server without creating a second application.
+---END WRITE
