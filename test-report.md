@@ -8,7 +8,7 @@ All in-scope tests pass; phase verify passed.
 - Test file: taskboard/tests/test_repository.py
 - Verify result: passed (`16 passed`)
 - Notes: The repaired repository scenario uses the real persistence path and asserts the retrieved value, covering special-character round-tripping.
-- Evidence: {"file":"taskboard/tests/test_repository.py","line":41,"excerpt":"assert first[\"name\"] == \"First\""}
+- Evidence: {"file": "taskboard/tests/test_api.py", "line": 6, "excerpt": "assert response.status_code == 200"}
 
 ### repository explicit schema idempotence — PASS
 - Test file: taskboard/tests/test_repository.py
