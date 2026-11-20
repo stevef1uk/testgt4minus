@@ -4,7 +4,7 @@ from datetime import datetime
 
 import pytest
 
-from taskboard import repository
+from taskboard import db, repository
 
 
 @pytest.fixture
@@ -120,3 +120,79 @@ def test_schema_initialization_is_explicitly_idempotent(db_path):
     project = repository.create_project("After repeated initialization", db_path=db_path)
 
     assert repository.list_projects(db_path) == [project]
+
+
+def test_schema_contract_has_tables_pragmas_and_project_index(db_path):
+    db.init_schema(db_path)
+
+    with db.connect(db_path) as connection:
+        tables = {
+            row[0]
+            for row in connection.execute(
+                "SELECT name FROM sqlite_master WHERE type = 'table'"
+            )
+        }
+        assert {"projects", "tasks"} <= tables
+        assert connection.execute("PRAGMA foreign_keys").fetchone()[0] == 1
+        assert connection.execute("PRAGMA busy_timeout").fetchone()[0] == 5000
+
+        indexes = connection.execute("PRAGMA index_list(tasks)").fetchall()
+        indexed_columns = {
+            column[2]
+            for index in indexes
+            for column in connection.execute(
+                f'PRAGMA index_info("{index[1]}")'
+            ).fetchall()
+        }
+        assert "project_id" in indexed_columns
+def test_project_and_task_field_contract_has_expected_types(db_path):
+    project = repository.create_project("Project", db_path=db_path)
+    task = repository.create_task(project["id"], "Task", db_path=db_path)
+
+    assert set(project) == {"id", "name", "created_at"}
+    assert isinstance(project["id"], int)
+    assert isinstance(project["name"], str)
+    assert isinstance(project["created_at"], str)
+
+    assert set(task) == {
+        "id",
+        "project_id",
+        "title",
+        "description",
+        "status",
+        "priority",
+        "created_at",
+        "updated_at",
+    }
+    assert isinstance(task["id"], int)
+    assert isinstance(task["project_id"], int)
+    assert isinstance(task["title"], str)
+    assert isinstance(task["description"], str)
+    assert isinstance(task["status"], str)
+    assert isinstance(task["priority"], str)
+    assert isinstance(task["created_at"], str)
+    assert isinstance(task["updated_at"], str)
+
+
+def test_invalid_descriptions_statuses_and_priorities_are_rejected(db_path):
+    project = repository.create_project("Project", db_path=db_path)
+
+    for description in ("x" * 1001,):
+        with pytest.raises(ValueError):
+            repository.create_task(
+                project["id"], "Task", description=description, db_path=db_path
+            )
+
+    task = repository.create_task(project["id"], "Task", db_path=db_path)
+
+    for status in ("invalid", "", None):
+        with pytest.raises(ValueError):
+            repository.update_task(
+                task["id"], {"status": status}, db_path=db_path
+            )
+
+    for priority in ("invalid", "", None):
+        with pytest.raises(ValueError):
+            repository.update_task(
+                task["id"], {"priority": priority}, db_path=db_path
+            )
