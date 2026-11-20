@@ -42,6 +42,7 @@ def test_projects_have_ascending_ids_and_utc_timestamps(db_path):
     created_at = datetime.fromisoformat(first["created_at"])
     assert created_at.tzinfo is not None
     assert created_at.utcoffset() == timezone.utc.utcoffset(created_at)
+    assert created_at.tzinfo == timezone.utc
     assert repository.list_projects(db_path) == [first, second]
 
 
