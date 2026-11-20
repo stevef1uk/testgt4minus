@@ -146,6 +146,52 @@ def create_app(db_path: str | None = None) -> FastAPI:
             return _error(404, "project not found")
         return Response(status_code=204)
 
+    @application.patch("/api/tasks/{task_id}")
+    def patch_task(task_id: int, payload: dict):
+        import sqlite3
+
+        if "project_id" in payload:
+            return JSONResponse(
+                status_code=400,
+                content={"error": "task project cannot be changed"},
+            )
+
+        allowed = {"title", "description", "status", "priority"}
+        updates = {key: value for key, value in payload.items() if key in allowed}
+        if "title" in updates:
+            updates["title"] = str(updates["title"]).strip()
+            if not updates["title"]:
+                return JSONResponse(status_code=400, content={"error": "title is required"})
+        if "status" in updates and updates["status"] not in {"todo", "in_progress", "done"}:
+            return JSONResponse(status_code=400, content={"error": "invalid status"})
+        if "priority" in updates and updates["priority"] not in {"low", "medium", "high"}:
+            return JSONResponse(status_code=400, content={"error": "invalid priority"})
+
+        with sqlite3.connect(selected_path) as connection:
+            connection.row_factory = sqlite3.Row
+            existing = connection.execute(
+                "SELECT * FROM tasks WHERE id = ?", (task_id,)
+            ).fetchone()
+            if existing is None:
+                return JSONResponse(status_code=404, content={"error": "task not found"})
+            if updates:
+                assignments = ", ".join(f"{key} = ?" for key in updates)
+                connection.execute(
+                    f"UPDATE tasks SET {assignments} WHERE id = ?",
+                    [*updates.values(), task_id],
+                )
+                connection.commit()
+            row = connection.execute(
+                "SELECT * FROM tasks WHERE id = ?", (task_id,)
+            ).fetchone()
+        return dict(row)
+
+    @application.delete("/api/tasks/{task_id}", status_code=204)
+    def delete_task(task_id: int):
+        if not repository.delete_task(task_id, selected_path):
+            return _error(404, "task not found")
+        return Response(status_code=204)
+
     return application
 
 
