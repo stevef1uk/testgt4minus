@@ -79,7 +79,6 @@
             "taskboard/db.py",
             "taskboard/models.py",
             "taskboard/repository.py",
-            "taskboard/templates/index.html",
             "taskboard/static/app.js",
             "taskboard/static/style.css"
           ],
