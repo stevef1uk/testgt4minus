@@ -20,31 +20,31 @@ Assertions:
 
 
 
+
+
 ### phase-1-app
-Requirement: The runnable application exposes the health and project HTTP routes, initializes the configured database, renders the real project page, and serves both static assets.
+Requirement: The runnable application exposes the health and project HTTP routes, initializes the configured database, renders real root HTML, and serves both canonical static assets.
 Level: integration
 Test file: taskboard/tests/test_api.py
 Bead ID: te-c2c
 Phase: phase-1-app
 Scenarios:
-- Create an isolated app with a temporary database and verify the health endpoint returns the exact documented JSON.
-- Create trimmed projects, list them in ascending ID order, delete one successfully, and request a missing project deletion.
-- Submit empty or whitespace-only project names and verify structured validation errors; verify an empty project list is an empty JSON array.
-- Submit project names at the 80-character maximum and above it, and verify the documented acceptance and validation error.
-- Exercise task payload validation at the documented 120-character title and 1000-character description limits (and values above each limit).
-- Request the root page and both canonical static assets and verify the rendered project form and nonempty responses.
+- Create an isolated app with a temporary database and verify GET /api/health returns exactly {"status":"ok"}.
+- Create trimmed projects, verify ascending ID ordering and empty-list serialization, then delete an existing and a missing project.
+- Submit empty and whitespace-only names and verify the documented 400 error shape.
+- Request the root page and both canonical static assets.
 Assertions:
-- Health and project endpoints return the documented decoded JSON values and status codes; successful deletion is 204 with an empty body, while invalid and missing operations return the documented error shape.
-- Project names are trimmed and persisted, IDs remain ordered, and isolated app instances do not share database state.
-- The 80-character project-name, 120-character task-title, and 1000-character description boundaries are enforced with the documented validation response.
-- The root response is real HTML containing the TaskBoard heading and project form, and `/static/app.js` and `/static/style.css` return 200 with nonempty content.
+- Health and project endpoints return the documented decoded JSON values and status codes; successful deletion is 204 with an empty body and missing deletion is 404 with an error object.
+- Project names are trimmed and persisted, IDs remain ordered, and isolated clients do not share database state.
+- Invalid project names return the documented application-level validation response.
+- The root response is real HTML containing the TaskBoard heading and project form, while app.js and style.css return 200 with nonempty content.
 
 ### phase-2
 Requirement: The phase-2 delivery adds the specified task HTTP behavior and user-visible task interactions.
 Level: integration
 Test file: taskboard/tests/test_api.py
 Test file: taskboard/tests/test_ui_content.py
-Bead ID:
+Bead ID: pending
 Phase: phase-2
 Scenarios:
 - Exercise each task route documented for phase 2, including project scoping, creation, listing, update, and deletion.
