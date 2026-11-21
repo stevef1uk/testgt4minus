@@ -108,7 +108,7 @@ three headings, and nonempty static responses.
 
 Commands run from taskboard/. Ensure Python and Node dependencies are installed
 before test review; test-review commands must not install packages. Phase 1 runs only the repository/API
-pytest verification command. Phase 2 runs python -m pytest -q tests. Phase 3
+pytest verification command. Phase 2 runs python -m pytest -q taskboard/tests. Phase 3
 runs the pytest suite and
 ./node_modules/.bin/playwright test --config playwright.config.ts playwright
 against an already-running server at 127.0.0.1:8080. Browser assertions inspect real
@@ -156,7 +156,7 @@ delivery_phases:
       - taskboard/static/style.css
       - taskboard/tests/conftest.py
       - taskboard/tests/test_api.py
-    qa_verify_command: "cd taskboard && python -m pytest -q tests"
+    qa_verify_command: "cd taskboard && python -m pytest -q taskboard/tests"
     depends_on: [phase-1-core]
     file_dependencies:
       taskboard/main.py: [taskboard/db.py, taskboard/models.py, taskboard/repository.py]
@@ -173,7 +173,7 @@ delivery_phases:
       - taskboard/tests/conftest.py
       - taskboard/tests/test_repository.py
       - taskboard/tests/test_api.py
-    qa_verify_command: "cd taskboard && python -m pytest -q tests"
+    qa_verify_command: "cd taskboard && python -m pytest -q taskboard/tests"
     depends_on: [phase-1-app]
   - id: phase-3
     title: Filters, browser tests, and release check
@@ -183,7 +183,7 @@ delivery_phases:
       - taskboard/package-lock.json
       - taskboard/playwright.config.ts
       - taskboard/playwright/taskboard.spec.ts
-    qa_verify_command: "cd taskboard && python -m pytest -q tests && ./node_modules/.bin/playwright test --config playwright.config.ts playwright"
+    qa_verify_command: "cd taskboard && python -m pytest -q taskboard/tests && ./node_modules/.bin/playwright test --config playwright.config.ts playwright"
     depends_on: [phase-2]
     file_dependencies:
       taskboard/playwright.config.ts: [taskboard/package.json]
