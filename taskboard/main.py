@@ -194,7 +194,10 @@ def create_app(db_path: str | None = None) -> FastAPI:
 
     @app.get("/", response_class=HTMLResponse)
     def index() -> HTMLResponse:
-        return HTMLResponse((BASE_DIR / "templates" / "index.html").read_text(encoding="utf-8"))
+        template = BASE_DIR / "templates" / "index.html"
+        if template.is_file():
+            return HTMLResponse(template.read_text(encoding="utf-8"))
+        return HTMLResponse("<!doctype html><html><head><title>Taskboard</title></head><body><h1>Taskboard</h1></body></html>")
 
     app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
     return app

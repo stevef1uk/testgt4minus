@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TaskBoard</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+  <header>
+    <h1>TaskBoard</h1>
+  </header>
+
+  <main>
+    <p id="error-message" class="error" role="alert" hidden></p>
+
+    <section class="project-panel" aria-labelledby="projects-heading">
+      <h2 id="projects-heading">Projects</h2>
+      <form id="project-form">
+        <label for="project-name">Project name
+          <input id="project-name" name="name" type="text" required maxlength="80">
+        </label>
+        <button type="submit">Add project</button>
+      </form>
+      <div class="project-controls">
+        <label for="project-select">Selected project
+          <select id="project-select" name="project">
+            <option value="">No projects</option>
+          </select>
+        </label>
+        <button id="delete-project" class="danger" type="button" disabled>Delete project</button>
+      </div>
+      <p id="projects-empty" class="empty-state" hidden>No projects yet. Add a project to get started.</p>
+    </section>
+
+    <section id="task-panel" class="task-panel" aria-labelledby="tasks-heading">
+      <h2 id="tasks-heading">Tasks</h2>
+      <form id="task-form">
+        <div class="form-row">
+          <label for="task-title">Title
+            <input id="task-title" name="title" type="text" required maxlength="120">
+          </label>
+          <label for="task-priority">Priority
+            <select id="task-priority" name="priority">
+              <option value="low">Low</option>
+              <option value="medium" selected>Medium</option>
+              <option value="high">High</option>
+            </select>
+          </label>
+        </div>
+        <label for="task-description">Description
+          <textarea id="task-description" name="description" maxlength="1000"></textarea>
+        </label>
+        <button type="submit">Add task</button>
+      </form>
+
+      <div class="filters" aria-label="Task filters">
+        <label for="status-filter">Status
+          <select id="status-filter">
+            <option value="all">All</option>
+            <option value="todo">To Do</option>
+            <option value="doing">Doing</option>
+            <option value="done">Done</option>
+          </select>
+        </label>
+        <label for="priority-filter">Priority
+          <select id="priority-filter">
+            <option value="all">All</option>
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="kanban" aria-label="Task board">
+        <section class="column" aria-labelledby="todo-heading">
+          <h3 id="todo-heading">To Do</h3>
+          <div id="todo-list" class="task-list"></div>
+        </section>
+        <section class="column" aria-labelledby="doing-heading">
+          <h3 id="doing-heading">Doing</h3>
+          <div id="doing-list" class="task-list"></div>
+        </section>
+        <section class="column" aria-labelledby="done-heading">
+          <h3 id="done-heading">Done</h3>
+          <div id="done-list" class="task-list"></div>
+        </section>
+      </div>
+      <p id="tasks-empty" class="empty-state" hidden>No matching tasks.</p>
+    </section>
+  </main>
+</body>
+</html>

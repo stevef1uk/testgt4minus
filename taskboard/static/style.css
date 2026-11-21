@@ -1,0 +1,290 @@
+:root {
+  color-scheme: light;
+  --background: #f5f7fb;
+  --surface: #ffffff;
+  --surface-muted: #eef2f7;
+  --border: #d8e0ea;
+  --text: #1f2937;
+  --muted: #64748b;
+  --accent: #2563eb;
+  --accent-dark: #1d4ed8;
+  --danger: #b91c1c;
+  --danger-background: #fee2e2;
+  --shadow: 0 8px 24px rgb(15 23 42 / 8%);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  color: var(--text);
+  background: var(--background);
+  line-height: 1.5;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+button,
+input,
+select,
+textarea {
+  border: 1px solid var(--border);
+  border-radius: 0.45rem;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  padding: 0.6rem 0.7rem;
+  color: var(--text);
+  background: var(--surface);
+}
+
+textarea {
+  min-height: 5rem;
+  resize: vertical;
+}
+
+input:focus,
+select:focus,
+textarea:focus,
+button:focus-visible {
+  outline: 3px solid rgb(37 99 235 / 25%);
+  outline-offset: 1px;
+  border-color: var(--accent);
+}
+
+button {
+  padding: 0.58rem 0.85rem;
+  color: var(--text);
+  background: var(--surface);
+}
+
+button:hover:not(:disabled) {
+  background: var(--surface-muted);
+}
+
+main,
+header {
+  width: min(1200px, calc(100% - 2rem));
+  margin-inline: auto;
+}
+
+header {
+  padding: 2rem 0 1rem;
+}
+
+header h1,
+h1 {
+  margin: 0;
+  color: var(--text);
+  font-size: clamp(1.8rem, 4vw, 2.5rem);
+  line-height: 1.15;
+}
+
+h2,
+h3 {
+  margin-top: 0;
+  line-height: 1.25;
+}
+
+main {
+  padding-bottom: 3rem;
+}
+
+form {
+  display: grid;
+  gap: 0.75rem;
+}
+
+label {
+  display: grid;
+  gap: 0.3rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.panel,
+.project-panel,
+.task-panel {
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.7rem;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.project-panel,
+.task-panel {
+  margin-bottom: 1rem;
+}
+
+.project-controls,
+.filters,
+.form-row,
+.task-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  align-items: end;
+}
+
+.project-controls > *,
+.filters > *,
+.form-row > * {
+  flex: 1 1 12rem;
+}
+
+.primary,
+button[type="submit"] {
+  color: #fff;
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.primary:hover:not(:disabled),
+button[type="submit"]:hover:not(:disabled) {
+  border-color: var(--accent-dark);
+  background: var(--accent-dark);
+}
+
+.danger {
+  color: var(--danger);
+  border-color: #fecaca;
+  background: var(--danger-background);
+}
+
+.error,
+.error-message {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  color: var(--danger);
+  border: 1px solid #fecaca;
+  border-radius: 0.5rem;
+  background: var(--danger-background);
+}
+
+.hidden,
+[hidden] {
+  display: none !important;
+}
+
+.kanban,
+.board {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.column {
+  min-width: 0;
+  padding: 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 0.7rem;
+  background: var(--surface-muted);
+}
+
+.column h2,
+.column h3 {
+  margin-bottom: 0.8rem;
+  font-size: 1.05rem;
+}
+
+.task-list {
+  display: grid;
+  gap: 0.75rem;
+  min-height: 4rem;
+}
+
+.task-card {
+  padding: 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 0.55rem;
+  background: var(--surface);
+  box-shadow: 0 2px 8px rgb(15 23 42 / 6%);
+}
+
+.task-card h3,
+.task-card h4 {
+  margin: 0 0 0.35rem;
+  overflow-wrap: anywhere;
+}
+
+.task-card p {
+  margin: 0.35rem 0;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.priority,
+.task-priority {
+  display: inline-block;
+  margin: 0.25rem 0 0.65rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  color: var(--muted);
+  background: var(--surface-muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.task-actions {
+  align-items: center;
+}
+
+.task-actions button {
+  flex: 1 1 auto;
+  padding: 0.4rem 0.55rem;
+  font-size: 0.85rem;
+}
+
+.empty-state,
+.empty {
+  padding: 1rem;
+  color: var(--muted);
+  text-align: center;
+  border: 1px dashed var(--border);
+  border-radius: 0.5rem;
+}
+
+@media (max-width: 760px) {
+  header {
+    padding-top: 1.25rem;
+  }
+
+  .kanban,
+  .board {
+    grid-template-columns: 1fr;
+  }
+
+  .column {
+    min-height: 6rem;
+  }
+
+  main,
+  header {
+    width: min(100% - 1rem, 1200px);
+  }
+}
