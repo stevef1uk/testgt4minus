@@ -1,87 +1,120 @@
-# Implementation plan
+# Implementation plan — phase-1-app
 
-## Delivery scope
-
-Implement only the six `phase-1-app` paths. The phase gate for every bead and for the integrated change is:
+This plan covers only the six required files for the runnable application
+subphase. The completed phase-1-core repository, models, and database modules
+are prerequisites. Verification for this phase is exactly:
 `cd taskboard && python -m pytest -q tests`.
-The implementation must remain within the SPEC contract: a runnable FastAPI taskboard, its browser shell/assets, and API tests/fixtures. Do not add later-phase files or features.
 
 ## Bead map
 
-### tm-5dk: taskboard/main.py
-- Scope: Own the runnable application factory, SQLite schema/connection behavior, HTML root wiring, and all phase-1 API behavior described in SPEC and architecture.
-- Architecture: `architecture.md` application entrypoint/data-access section; expose `create_app(...)` and the FastAPI application used by the test fixture. Use the `TASKBOARD_DB_PATH` environment override and initialize the projects store before serving requests.
-- Interfaces: `create_app(database_path: str | None = None)` returns the application; `GET /api/health` returns `200` and `{"status":"ok"}`; project routes are `GET /api/projects`, `POST /api/projects`, `GET /api/projects/{project_id}`, `PUT /api/projects/{project_id}`, and `DELETE /api/projects/{project_id}`.
-- Depends on: <none>
-- Consumed by: taskboard/tests/conftest.py; taskboard/tests/test_api.py; taskboard/templates/index.html (through the root page); taskboard/static/app.js (through the API contract).
-- Acceptance:
-  - A fresh database is created at the configured path and the health endpoint returns exactly `{"status": "ok"}`.
-  - Project create then list returns the created project with its persisted identifier and submitted name/description; retrieving that identifier returns the same record.
-  - Updating an existing project persists the changed fields and deleting it removes it from subsequent list/get results.
-  - Missing project IDs produce HTTP 404 with the SPEC error JSON shape; malformed or missing required project data produces HTTP 400 with the SPEC validation error shape.
-  - The root page is served successfully and exposes the template/static assets; requests use the configured database rather than a shared test database.
+### tm-j2d: taskboard/tests/test_api.py
+- Scope: Integration tests for the phase-1 app, using the isolated client fixture.
+- Architecture: `taskboard/tests/test_api.py` owns API assertions; phase-1-app
+  routes are health and project CRUD plus rendered page/static resources.
+- Interfaces: Assert `GET /api/health`, `GET /api/projects`,
+  `POST /api/projects`, `DELETE /api/projects/{project_id}`, `GET /`,
+  `/static/app.js`, and `/static/style.css`; project JSON is `id`, `name`,
+  `created_at`.
+- Depends on: taskboard/tests/conftest.py, taskboard/main.py
+- Consumed by: <none>
+- Acceptance: Prove health returns exactly `{"status":"ok"}`; project creation
+  trims names and returns 201, listing is ascending and returns `[]` initially,
+  and deletion returns 204 with no body and 404 for a missing project. Prove
+  empty/invalid project names return the specified 400 error object. Prove the
+  root is real HTML containing TaskBoard and the required basic page structure,
+  and both canonical static responses are nonempty with appropriate content.
+  Do not test single-project GET/PUT routes or a project description field.
+- Verify: `cd taskboard && python -m pytest -q tests`
 
 ### tm-ff6: taskboard/tests/conftest.py
-- Scope: Provide the isolated pytest `client` fixture and database lifecycle used by the phase API suite.
-- Architecture: `architecture.md` testing/fixture section; fixture reloads `taskboard.main`, calls `create_app`, and uses FastAPI `TestClient`.
-- Interfaces: pytest fixture `client` yields a `TestClient` backed by a per-test `TASKBOARD_DB_PATH`; fixture asserts the database is created and the health contract before yielding.
+- Scope: Isolated pytest `client` fixture for the FastAPI application.
+- Architecture: Set `TASKBOARD_DB_PATH` to a `tmp_path` database, reload
+  `taskboard.main`, call `create_app`, and yield a FastAPI `TestClient`.
+- Interfaces: Fixture supplies an app backed by an explicit temporary path and
+  performs a health smoke assertion of status 200 and exact
+  `{"status":"ok"}` before yielding.
 - Depends on: taskboard/main.py
 - Consumed by: taskboard/tests/test_api.py
-- Acceptance:
-  - Each test receives a temporary SQLite path and cannot leak project rows into another test.
-  - Fixture setup proves `/api/health` responds 200 with exactly `{"status":"ok"}` before API cases execute.
-  - The fixture closes the test client after each test and supports application reload with the environment override.
+- Acceptance: Every test gets an independent database; schema initialization
+  succeeds; the fixture never uses runtime `taskboard.db`; and the health
+  bootstrap assertion is exact.
+- Verify: `cd taskboard && python -m pytest -q tests`
 
-### tm-j2d: taskboard/tests/test_api.py
-- Scope: Encode the SPEC’s observable API contract as executable tests, including success, validation, and not-found cases.
-- Architecture: `architecture.md` API test matrix; tests consume the `client` fixture and assert status codes and complete response JSON, not merely file existence.
-- Interfaces: tests exercise `/api/health`, `/api/projects`, and `/api/projects/{project_id}` using the HTTP verbs and payloads specified by SPEC.
-- Depends on: taskboard/main.py; taskboard/tests/conftest.py
-- Consumed by: phase verification (`cd taskboard && python -m pytest -q tests`)
-- Acceptance:
-  - Assert health status/body exactly, empty-project list behavior, and successful project create/list/get round trip.
-  - Assert update changes persisted values and delete returns the specified success response followed by 404/not-found behavior.
-  - Assert missing required name/invalid request payloads return 400 and the documented error JSON; assert unknown IDs return 404 and the documented error JSON for get/update/delete.
-  - Tests use the phase gate command and pass against a fresh temporary database without relying on pre-existing files.
+### tm-5dk: taskboard/main.py
+- Scope: Implement `create_app(db_path: str | None = None) -> FastAPI`,
+  module-level `app`, schema startup, project routes, root rendering, and
+  StaticFiles mounting.
+- Architecture: `taskboard/main.py` owns HTTP wiring and resolves explicit
+  db_path, then nonempty `TASKBOARD_DB_PATH`, then the taskboard.db fallback.
+  It must not contain SQL or browser state.
+- Interfaces: Export `create_app` and `app`. Implement exactly
+  `GET /api/health` (200 exact object), `GET /api/projects` (200 array),
+  `POST /api/projects` (201 project), `DELETE /api/projects/{project_id}`
+  (204 empty body), `GET /`, `/static/app.js`, and `/static/style.css`.
+  Application errors are the specified 400/404 error objects; malformed integer
+  paths retain FastAPI 422. No single-project GET or PUT route is added.
+- Depends on: taskboard/db.py, taskboard/models.py, taskboard/repository.py
+- Consumed by: taskboard/tests/conftest.py, taskboard/tests/test_api.py
+- Acceptance: App startup initializes the selected database and stores its path
+  in app state; repository operations persist project create/list/delete
+  behavior and preserve exact project JSON shape. Root serves real HTML and
+  static assets through canonical paths. DELETE is bodyless 204, missing
+  projects are 404, and invalid names are 400. The module-level app supports
+  the documented uvicorn import.
+- Verify: `cd taskboard && python -m pytest -q tests`
 
 ### tm-c2q: taskboard/templates/index.html
-- Scope: Provide the single-page taskboard markup, project form/list container, and links to the static stylesheet and script.
-- Architecture: `architecture.md` frontend template section; preserve the DOM hooks and form/control IDs consumed by `static/app.js`.
-- Interfaces: root document includes the project creation form, project list/status regions, and `/static/style.css` plus `/static/app.js` references.
+- Scope: Provide the real server-rendered TaskBoard page shell and semantic
+  controls required by the current and later UI phases.
+- Architecture: Own semantic forms, selectors, columns, and message regions;
+  reference canonical static assets and contain no database calls or inline
+  application logic.
+- Interfaces: Include the `TaskBoard` heading, project creation input and
+  Add project control, project selector/list, task form hooks, priority
+  control, visible To Do/Doing/Done headings, empty-state and error regions,
+  and canonical `/static/app.js` and `/static/style.css` references.
 - Depends on: taskboard/main.py
-- Consumed by: taskboard/static/app.js; browser response from `GET /`
-- Acceptance:
-  - Root HTML is valid and contains the visible taskboard heading, project name/description inputs, submit control, and project-list container required by SPEC.
-  - The template references the application’s static CSS and JavaScript paths so the browser can load both assets.
-  - Form and list identifiers match the selectors used by `app.js`, with no server-side feature or later-phase UI added.
+- Consumed by: taskboard/main.py, taskboard/tests/test_api.py
+- Acceptance: `GET /` returns content type text/html and real non-placeholder
+  markup containing the heading, project form, task form, three column headings,
+  and visible message regions. Required element IDs/hooks are consistent with
+  the script, and no project description field is invented.
+- Verify: `cd taskboard && python -m pytest -q tests`
 
 ### tm-rta: taskboard/static/app.js
-- Scope: Implement the browser-side project load, create, update/delete interaction, rendering, and API error presentation required by SPEC.
-- Architecture: `architecture.md` frontend JavaScript section; use the API paths/methods and template selectors defined there.
-- Interfaces: browser code calls `GET /api/projects`, `POST /api/projects`, and the project-item update/delete endpoints; it updates the template’s list/status DOM.
-- Depends on: taskboard/templates/index.html; taskboard/main.py
-- Consumed by: taskboard/templates/index.html in the served browser page
-- Acceptance:
-  - On page load, fetch projects and render returned names/descriptions; an empty response renders the empty state required by SPEC.
-  - Form submission sends the documented JSON fields to `POST /api/projects`, then refreshes or updates the visible list and clears the form on success.
-  - Project controls issue the documented update/delete requests and reflect successful changes/removal without a full-page navigation.
-  - Non-2xx API responses are surfaced in the page status area rather than silently treated as success.
+- Scope: Provide the vanilla browser module for loading projects and the basic
+  project-selection/page behavior, with hooks ready for the canonical board.
+- Architecture: Browser behavior belongs only in this file; use the documented
+  API paths and safe DOM text insertion, without server validation logic.
+- Interfaces: Use `/api/projects` for initial listing and project creation;
+  handle project selection/deletion controls and the page error region. Use
+  `textContent` for user-provided values and reference template hooks.
+- Depends on: taskboard/main.py, taskboard/templates/index.html
+- Consumed by: taskboard/tests/test_api.py
+- Acceptance: Initial load renders the project list or empty state, Add project
+  submits the documented `{"name": ...}` payload, project selection updates
+  the visible selection, and API failures appear in the error region. User
+  content is not inserted as raw HTML; no nonexistent project GET/PUT endpoint
+  or description payload is used.
+- Verify: `cd taskboard && python -m pytest -q tests`
 
 ### tm-2ob: taskboard/static/style.css
-- Scope: Style the taskboard page, form, project list/cards, controls, status and empty states according to the architecture’s frontend layout.
-- Architecture: `architecture.md` frontend CSS section; selectors correspond to the markup classes/IDs in `index.html` and the states rendered by `app.js`.
-- Interfaces: stylesheet is served at `/static/style.css` and defines the page/container, form, list/card, action, status, and empty-state selectors used by the template/script.
+- Scope: Style the real TaskBoard shell, forms, project controls, board columns,
+  empty state, and error state with nonempty canonical CSS.
+- Architecture: Presentation belongs only in this stylesheet and must support
+  the template's semantic structure without changing API behavior.
+- Interfaces: Provide selectors for the heading, forms, project selector,
+  controls, task-board columns, cards, empty state, error region, and a usable
+  narrow-window layout.
 - Depends on: taskboard/templates/index.html
-- Consumed by: taskboard/templates/index.html
-- Acceptance:
-  - The served stylesheet is loadable by the root page and styles the required project form and list/card layout.
-  - Normal, empty, error/status, and project action-control states have readable, distinct presentation matching the SPEC’s basic UI contract.
-  - CSS remains limited to the required taskboard presentation and does not require an unplanned frontend framework or build step.
+- Consumed by: taskboard/main.py, taskboard/tests/test_api.py
+- Acceptance: `/static/style.css` returns 200, a CSS content type, and nonempty
+  content. Styles match the template hooks, visibly distinguish the three
+  columns and error/empty regions, and introduce no framework or build step.
+- Verify: `cd taskboard && python -m pytest -q tests`
 
-## Verification
+## Phase verification
 
-Run exactly: `cd taskboard && python -m pytest -q tests`. Confirm the root page and static assets are registered, then exercise the full API matrix above through the test suite.
-
-## Future considerations
-
-Later architecture phases may add additional persistence entities or deployment concerns; they are intentionally outside this phase and must not be implemented here.
+Run only `cd taskboard && python -m pytest -q tests` after dependencies are
+already installed. The phase must preserve the completed repository contract,
+the exact project API scope, and the route exclusions stated in architecture.
