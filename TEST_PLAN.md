@@ -25,7 +25,7 @@ Bead ID: tm-j2d
 Phase: phase-1-app
 Scenarios:
 - Use the fresh temporary-database client fixture to verify `GET /api/health` and confirm the isolated test database is used rather than runtime `taskboard.db`.
-- Exercise project create/list/patch/delete round trips, including required validation, deterministic ordering, missing-resource behavior, and bodyless 204 deletion.
+- Exercise project create/list/delete round trips, including required validation, deterministic ordering, missing-resource behavior, and bodyless 204 deletion.
 - Request `/` and the canonical JavaScript and CSS asset paths, checking the real HTML shell and successful static responses.
 Assertions:
 - `/api/health` returns status 200 and decoded JSON `{"status":"ok"}`; project responses have the specified decoded fields/types and status codes.
