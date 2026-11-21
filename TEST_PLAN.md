@@ -22,7 +22,7 @@ Assertions:
 Requirement: The application exposes the specified project API routes and wires them to the repository.
 Level: integration
 Test file: taskboard/tests/test_api.py
-Bead ID: te-c2c
+Bead ID: pending
 Phase: phase-1-app
 Scenarios:
 - Create an app with the fixture's temporary database and call `/api/health`, project create/list/delete, and missing-project deletion.
@@ -46,7 +46,7 @@ Assertions:
 Requirement: Expose project-scoped task list/create routes and task patch/delete routes with exact success/error statuses, JSON shapes, validation, missing-resource behavior, empty arrays, bodyless deletes, and composed filters.
 Level: integration
 Test file: taskboard/tests/test_api.py
-Bead ID: te-c2c
+Bead ID: pending
 Phase: phase-2
 Scenarios:
 - Create a project and tasks, list them in ID order, apply status and priority filters together, patch each supported field while preserving omitted fields, and delete a task.
