@@ -1,66 +1,71 @@
-# Test Plan — TaskBoard
+# Test Plan — Taskboard
 
 ## Requirements → tests
 
 ### phase-1-core
-Requirement: Deliver the SQLite foundation, validation/mapping, project and task repository behavior, schema invariants, and persistence tests.
+Requirement: The repository/domain layer persists projects and tasks, validates required fields and enum values, enforces title/description length limits, and supports task filtering and project-delete cascade.
 Level: unit
 Test file: taskboard/tests/test_repository.py
 Bead ID: tm-ns3
 Phase: phase-1-core
 Scenarios:
-- Initialize a new temporary database twice and verify empty project/task collections, idempotent schema setup, foreign keys, and busy timeout.
-- Create projects and tasks, verify trimmed values, ascending IDs, default todo/medium values, explicit UTC timestamps, and status/priority filters including AND composition.
-- Exercise the project-name length boundary: accept an 80-character name and reject an 81-character name.
-- Exercise task-title boundaries: accept a 120-character title and reject a 121-character title; exercise description boundaries by accepting a 1000-character description and rejecting a 1001-character description.
-- Patch selected task fields while preserving omitted fields, then delete a project and verify its tasks cascade away.
+- Create and retrieve projects and tasks with stable IDs and the documented fields.
+- Reject empty or overlong titles/descriptions and invalid status or priority values.
+- Apply status and priority filters independently and together as an AND query.
+- Delete a project and cascade-delete its tasks; missing records return the repository's documented result.
 Assertions:
-- Repository results match the specified decoded project/task shapes and deterministic ID ordering.
-- Validation rejects empty/overlong task titles, overlong descriptions, and unknown status/priority values; writes use persisted state and timestamps carry UTC offsets.
-- Project-name validation accepts exactly 80 characters and rejects 81 characters.
-- A deleted project leaves no child tasks, while an empty/new database returns `[]`.
+- Valid records round-trip with the expected values and types.
+- Invalid values raise/return the specified validation error without persistence.
+- A composed filter returns only records matching both predicates.
+- After project deletion neither the project nor its tasks can be retrieved.
 
 ### phase-1-app
-Requirement: Deliver the runnable FastAPI app, health and project CRUD HTTP routes, isolated fixture, real HTML root, and static asset serving while preserving the core repository contract.
+Requirement: The FastAPI application exposes the documented health, project, task, and static/root routes with SPEC-correct statuses, JSON error objects, validation limits, content types, and runtime-database isolation.
 Level: integration
 Test file: taskboard/tests/test_api.py
-Bead ID:
+Bead ID: tm-ssd
 Phase: phase-1-app
 Scenarios:
-- Use the fresh temporary-database client fixture to verify `GET /api/health` and confirm the isolated test database is used rather than runtime `taskboard.db`.
-- Exercise project create/list/delete round trips, including required validation, deterministic ordering, missing-resource behavior, and bodyless 204 deletion.
-- Request `/` and the canonical JavaScript and CSS asset paths, checking the real HTML shell and successful static responses.
+- Health, root, and JavaScript/static endpoints return success, nonempty bodies, and their documented media types.
+- Project/task create, list, get, update, and delete routes return decoded JSON values with the documented statuses and content types.
+- Missing resources return the SPEC error object; malformed integer paths return 422 with the framework validation shape.
+- Invalid status/priority, empty fields, and overlong title/description requests return 400 with the documented error object and do not persist data.
+- Status plus priority query parameters compose as an AND filter.
+- Deleting a project returns 204 with an empty body and removes its tasks.
+- The TestClient configured with a temporary database does not read from or write to the runtime taskboard.db.
 Assertions:
-- `/api/health` returns status 200 and decoded JSON `{"status":"ok"}`; project responses have the specified decoded fields/types and status codes.
-- Invalid project names and missing projects produce the documented API error responses; delete returns 204 with no response body.
-- Root and static responses have the specified HTML/asset content types and nonempty content, and API tests do not modify the runtime database.
+- Root/static bodies are nonempty; HTML, JavaScript, and JSON responses have the specified content types.
+- Response status and decoded JSON keys/types/values match SPEC; 204 has exactly an empty body.
+- Every documented 400 response has the required error object, while malformed integer paths are 422.
+- Length-boundary and over-limit inputs are handled at the specified limits, and invalid writes are absent from subsequent GETs.
+- Combined filters return only rows satisfying both predicates.
+- Temporary-database data is isolated and the runtime database remains unchanged.
 
 ### phase-2
-Requirement: Extend the application with project selection, task creation/edit/delete, three Kanban columns, move-forward behavior, and visible empty/error states.
+Requirement: The delivered taskboard UI presents the available projects and tasks and lets a user perform the specified taskboard flows through the running application.
 Level: integration
 Test file: taskboard/tests/test_ui_content.py
 Bead ID: pending
 Phase: phase-2
 Scenarios:
-- Request the rendered page and assert project selector/list, task form controls, priority options, three column headings, task-card controls, and empty/error regions are present.
-- Use API-backed test setup to create a project and tasks, then verify the page/API contract supports selection and task state transitions through todo, doing, and done.
-- Verify edit and delete operations update or remove only the selected task and that empty project/task states are represented.
+- Load the running root page and verify the taskboard shell, project/task controls, and seeded data render.
+- Create, edit, filter, and delete the user-visible project/task records through the UI.
+- Exercise empty, loading, validation-error, and server-error states exposed by the UI.
 Assertions:
-- `GET /` is real HTML containing `TaskBoard`, both forms, `To Do`, `Doing`, and `Done`; static assets are nonempty and served at canonical paths.
-- Task create/edit/delete and move-forward requests produce documented decoded JSON/status results, with done tasks lacking an enabled move-forward control.
-- User-provided content is rendered safely via text content rather than raw HTML, and API failures are visible in the error region.
+- Required controls and rendered records are present and remain synchronized with the API.
+- Submitted valid data appears with the documented values; invalid data displays an error and does not create a record.
+- Filters show only matching records and deletion removes the record from the visible board.
 
 ### phase-3
-Requirement: Complete status/priority filters and ship independent Playwright browser acceptance scenarios with full pytest and release verification.
+Requirement: The completed browser experience provides the specified responsive styling and client-side interactions without breaking the documented API behavior.
 Level: ui
 Test file: taskboard/playwright/taskboard.spec.ts
 Bead ID: pending
 Phase: phase-3
 Scenarios:
-- Load a clean server and verify the real heading and all three Kanban headings.
-- Create a unique project and task, move it todo→doing→done, delete it, and verify each visible state and disappearance.
-- Create two uniquely named tasks with different priorities, filter to high, verify only the high-priority task, then reset and verify both tasks; clean up created projects.
+- Exercise the primary taskboard flow at desktop and narrow viewport sizes.
+- Verify client-side filtering, refresh/error handling, and static asset loading in the running UI.
 Assertions:
-- Browser assertions inspect real task text and column/state placement, not merely HTTP status or placeholders.
-- Filter controls issue the documented status/priority query combinations and filtered-out cards are not rendered; reset restores both tasks.
-- Each scenario is independent and uses cleanup against the persistent local server without introducing a second app or noncanonical test path.
+- The main layout and controls remain usable at both viewport sizes.
+- Interactions update the DOM with the expected records and show recoverable errors.
+- Static assets load successfully and API responses retain their documented statuses and media types.
