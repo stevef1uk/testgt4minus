@@ -76,7 +76,7 @@ def test_partial_patch_preserves_omitted_values(client):
 
     response = client.patch(
         f"/api/tasks/{task['id']}",
-        json={"title": "Renamed", "status": "in_progress"},
+        json={"title": "Renamed", "status": "doing"},
     )
     assert response.status_code == 200
     updated = response.json()
