@@ -10,21 +10,6 @@
     },
     {
       "stack": "python",
-      "rule": "Test review lesson: Repair implementation beads: te-j3i",
-      "source": "qa_rework",
-      "hits": 1,
-      "updated_at": "2026-11-20T17:31:42Z"
-    },
-    {
-      "stack": "python",
-      "rule": "Avoid in main.py: E AssertionError: assert '/api/projects/{project_id}/tasks/{task_id}' not in {'/', '/api/health', '/api/projects', '/ap...",
-      "source": "verify_fix",
-      "bead_path": "taskboard/main.py",
-      "hits": 1,
-      "updated_at": "2026-11-20T17:40:11Z"
-    },
-    {
-      "stack": "python",
       "rule": "QA lesson: {\"summary\":\"Stage 2 (code quality / YAGNI) fails: main.py, templates/index.html, static/app.js, and static/style.css include t...",
       "source": "qa_rework",
       "hits": 1,
@@ -59,6 +44,21 @@
       "source": "qa_rework",
       "hits": 1,
       "updated_at": "2026-11-21T18:39:34Z"
+    },
+    {
+      "stack": "python",
+      "rule": "Acceptance tests exposed missing schema index and boundary validation in previously green provider implementations.",
+      "source": "agent",
+      "bead_path": "taskboard/tests/test_repository.py",
+      "hits": 1,
+      "updated_at": "2026-11-21T18:41:27Z"
+    },
+    {
+      "stack": "python",
+      "rule": "Test review lesson: Repair implementation beads: tm-ns3",
+      "source": "qa_rework",
+      "hits": 1,
+      "updated_at": "2026-11-21T18:42:53Z"
     }
   ]
 }

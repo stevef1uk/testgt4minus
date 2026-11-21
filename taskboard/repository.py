@@ -44,6 +44,8 @@ class ProjectRepository:
 
     def create_project(self, name: str) -> dict[str, Any]:
         name = name.strip()
+        if not name or len(name) > 80:
+            raise ValueError("project name must be 1-80 characters")
         now = _utc_now()
         with db.connect(self.db_path) as connection:
             cursor = connection.execute(
@@ -101,15 +103,28 @@ class TaskRepository:
         status: str = "todo",
         priority: str = "medium",
     ) -> dict[str, Any]:
-        now = _utc_now()
+        title = title.strip()
+        if not title or len(title) > 120:
+            raise ValueError("task title must be 1-120 characters")
+        if not isinstance(description, str) or len(description) > 2000:
+            raise ValueError("task description must be at most 2000 characters")
+        if status not in {"todo", "in_progress", "done"}:
+            raise ValueError("invalid task status")
+        if priority not in {"low", "medium", "high"}:
+            raise ValueError("invalid task priority")
         with db.connect(self.db_path) as connection:
+            if connection.execute(
+                "SELECT 1 FROM projects WHERE id = ?", (project_id,)
+            ).fetchone() is None:
+                raise ValueError("project does not exist")
+            now = _utc_now()
             cursor = connection.execute(
                 "INSERT INTO tasks "
                 "(project_id, title, description, status, priority, "
                 "created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
                 (
                     project_id,
-                    title.strip(),
+                    title,
                     description,
                     status,
                     priority,
@@ -133,6 +148,21 @@ class TaskRepository:
             return self._get(task_id)
         if "title" in updates:
             updates["title"] = str(updates["title"]).strip()
+            if not updates["title"] or len(updates["title"]) > 120:
+                raise ValueError("task title must be 1-120 characters")
+        if "description" in updates and (
+            not isinstance(updates["description"], str)
+            or len(updates["description"]) > 2000
+        ):
+            raise ValueError("task description must be at most 2000 characters")
+        if "status" in updates and updates["status"] not in {
+            "todo", "in_progress", "done"
+        }:
+            raise ValueError("invalid task status")
+        if "priority" in updates and updates["priority"] not in {
+            "low", "medium", "high"
+        }:
+            raise ValueError("invalid task priority")
         assignments = ", ".join(f"{key} = ?" for key in updates)
         values = list(updates.values()) + [_utc_now(), task_id]
         with db.connect(self.db_path) as connection:
