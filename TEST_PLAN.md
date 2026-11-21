@@ -6,7 +6,7 @@
 Requirement: Provide the SQLite foundation, validation/mapping, project and task persistence, ordering, defaults, UTC timestamps, filtering, partial updates, cascade deletion, and isolated repository coverage.
 Level: unit
 Test file: taskboard/tests/test_repository.py
-Bead ID: te-7yg
+Bead ID: tm-ns3
 Phase: phase-1-core
 Scenarios:
 - Initialize a new database repeatedly and verify empty collections, required schema/index behavior, foreign keys, and the configured busy timeout.
