@@ -9,9 +9,8 @@ from pathlib import Path
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS projects (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL UNIQUE,
-    description TEXT NOT NULL DEFAULT '',
-    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    name TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%f','now') || '+00:00')
 );
 
 CREATE TABLE IF NOT EXISTS tasks (
@@ -20,21 +19,25 @@ CREATE TABLE IF NOT EXISTS tasks (
     title TEXT NOT NULL,
     description TEXT NOT NULL DEFAULT '',
     status TEXT NOT NULL DEFAULT 'todo',
-    position INTEGER NOT NULL DEFAULT 0,
-    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    priority TEXT NOT NULL DEFAULT 'medium',
+    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%f','now') || '+00:00'),
+    updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%f','now') || '+00:00')
 );
 """
 
 
 def database_path() -> Path:
-    return Path(os.environ.get("TASKBOARD_DB_PATH", "taskboard.db"))
+    configured = os.environ.get("TASKBOARD_DB_PATH")
+    if configured:
+        return Path(configured)
+    return Path(__file__).resolve().parent / "taskboard.db"
 
 
 def connect(path: str | Path | None = None) -> sqlite3.Connection:
     connection = sqlite3.connect(path or database_path())
     connection.row_factory = sqlite3.Row
     connection.execute("PRAGMA foreign_keys = ON")
+    connection.execute("PRAGMA busy_timeout = 5000")
     return connection
 
 
