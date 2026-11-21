@@ -23,7 +23,7 @@ Assertions:
 Requirement: Deliver the runnable FastAPI app, health and project CRUD HTTP routes, isolated fixture, real HTML root, and static asset serving while preserving the core repository contract.
 Level: integration
 Test file: taskboard/tests/test_api.py
-Bead ID: tm-j2d
+Bead ID:
 Phase: phase-1-app
 Scenarios:
 - Use the fresh temporary-database client fixture to verify `GET /api/health` and confirm the isolated test database is used rather than runtime `taskboard.db`.
