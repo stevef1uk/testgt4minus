@@ -11,10 +11,12 @@ Phase: phase-1-core
 Scenarios:
 - Initialize a new temporary database twice and verify empty project/task collections, idempotent schema setup, foreign keys, and busy timeout.
 - Create projects and tasks, verify trimmed values, ascending IDs, default todo/medium values, explicit UTC timestamps, and status/priority filters including AND composition.
+- Exercise the project-name length boundary: accept an 80-character name and reject an 81-character name.
 - Patch selected task fields while preserving omitted fields, then delete a project and verify its tasks cascade away.
 Assertions:
 - Repository results match the specified decoded project/task shapes and deterministic ID ordering.
-- Validation rejects empty/overlong titles, overlong descriptions, and unknown status/priority values; writes use persisted state and timestamps carry UTC offsets.
+- Validation rejects empty/overlong task titles, overlong descriptions, and unknown status/priority values; writes use persisted state and timestamps carry UTC offsets.
+- Project-name validation accepts exactly 80 characters and rejects 81 characters.
 - A deleted project leaves no child tasks, while an empty/new database returns `[]`.
 
 ### phase-1-app
