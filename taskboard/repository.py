@@ -24,7 +24,9 @@ def _project(row: Any) -> dict[str, Any]:
 
 
 def _task(row: Any) -> dict[str, Any]:
-    return task_to_dict(task_from_row(row))
+    task = task_to_dict(task_from_row(row))
+    task["priority"] = str(row["priority"])
+    return task
 
 
 class ProjectRepository:
