@@ -25,21 +25,6 @@
     },
     {
       "stack": "python",
-      "rule": "Test review lesson: Repair implementation beads: tm-ns3",
-      "source": "qa_rework",
-      "hits": 1,
-      "updated_at": "2026-11-21T18:42:53Z"
-    },
-    {
-      "stack": "python",
-      "rule": "Avoid in models.py: E ImportError: cannot import name 'VALID_PRIORITIES' from 'models' (/home/stevef/gt/testgt4m/mayor/rig/taskboard/mode...",
-      "source": "verify_fix",
-      "bead_path": "taskboard/models.py",
-      "hits": 1,
-      "updated_at": "2026-11-21T18:49:59Z"
-    },
-    {
-      "stack": "python",
       "rule": "Keep repository tests aligned with the SPEC schema; project records must not assert a description field.",
       "source": "agent",
       "bead_path": "taskboard/repository.py",
@@ -60,6 +45,21 @@
       "source": "qa_rework",
       "hits": 3,
       "updated_at": "2026-11-21T20:25:05Z"
+    },
+    {
+      "stack": "python",
+      "rule": "Avoid in test_repository.py: E SyntaxError: invalid syntax",
+      "source": "verify_fix",
+      "bead_path": "taskboard/tests/test_repository.py",
+      "hits": 1,
+      "updated_at": "2026-11-21T20:44:43Z"
+    },
+    {
+      "stack": "python",
+      "rule": "Test review lesson: Repair implementation beads: tm-ns3",
+      "source": "qa_rework",
+      "hits": 1,
+      "updated_at": "2026-11-21T20:44:49Z"
     }
   ]
 }

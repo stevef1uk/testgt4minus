@@ -59,22 +59,50 @@ def test_projects_and_tasks_have_defaults_and_ascending_ids(repositories):
 
 def test_validation_length_and_unicode_rules(repositories):
     projects, tasks = repositories
+
+    accepted_project = projects.create_project("p" * 80)
+    assert accepted_project["name"] == "p" * 80
+    with pytest.raises(ValueError):
+        projects.create_project("x" * 81)
+
     with pytest.raises(ValueError):
         projects.create_project("")
     with pytest.raises(ValueError):
         projects.create_project("x" * 201)
     with pytest.raises(ValueError):
         tasks.create_task(999, "orphan")
+
+    boundary_project = projects.create_project("Boundary")
+    accepted_task = tasks.create_task(
+        boundary_project["id"],
+        "t" * 120,
+        description="d" * 1000,
+        status="done",
+        priority="high",
+    )
+    assert accepted_task["title"] == "t" * 120
+    assert accepted_task["description"] == "d" * 1000
+    assert accepted_task["status"] == "done"
+    assert accepted_task["priority"] == "high"
+
+    with pytest.raises(ValueError):
+        tasks.create_task(boundary_project["id"], "x" * 121)
     with pytest.raises(ValueError):
         tasks.create_task(
-            projects.create_project("Unicode ✅")["id"],
-            "x" * 201,
+            boundary_project["id"], "Task", description="x" * 1001
         )
-    project = projects.create_project("日本語 🚀")
-    task = tasks.create_task(project["id"], "Задача", description="描述")
-    assert project["name"] == "日本語 🚀"
-    assert task["title"] == "Задача"
-    assert task["description"] == "描述"
+    with pytest.raises(ValueError):
+        tasks.create_task(boundary_project["id"], "Task", status="invalid")
+    with pytest.raises(ValueError):
+        tasks.create_task(boundary_project["id"], "Task", priority="invalid")
+
+    unicode_project = projects.create_project("日本語 🚀")
+    unicode_task = tasks.create_task(
+        unicode_project["id"], "Задача", description="描述"
+    )
+    assert unicode_project["name"] == "日本語 🚀"
+    assert unicode_task["title"] == "Задача"
+    assert unicode_task["description"] == "描述"
 
 
 def test_task_filters_compose_and_partial_update_preserves_values(repositories):
