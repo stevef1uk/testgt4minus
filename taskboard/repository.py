@@ -30,7 +30,7 @@ def _task(row: Any) -> dict[str, Any]:
 class ProjectRepository:
     def __init__(self, db_path: str | Path):
         self.db_path = Path(db_path)
-        _ensure_schema(self.db_path)
+        db.initialize(self.db_path)
 
     def list_projects(self) -> list[dict[str, Any]]:
         with db.connect(self.db_path) as connection:
@@ -65,7 +65,7 @@ class ProjectRepository:
 class TaskRepository:
     def __init__(self, db_path: str | Path):
         self.db_path = Path(db_path)
-        _ensure_schema(self.db_path)
+        db.initialize(self.db_path)
 
     def list_tasks(
         self,
