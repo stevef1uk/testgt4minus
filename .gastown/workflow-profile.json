@@ -97,7 +97,6 @@
           "taskboard/templates/index.html",
           "taskboard/static/app.js",
           "taskboard/static/style.css",
-          "taskboard/tests/conftest.py",
           "taskboard/tests/test_repository.py",
           "taskboard/tests/test_api.py"
         ],
@@ -105,7 +104,15 @@
         "depends_on": [
           "phase-1-app"
         ],
-        "spec_focus": "Tasks and Kanban UI"
+        "spec_focus": "Tasks and Kanban UI",
+        "file_dependencies": {
+          "taskboard/tests/test_ui_content.py": [
+            "taskboard/main.py",
+            "taskboard/templates/index.html",
+            "taskboard/static/app.js",
+            "taskboard/static/style.css"
+          ]
+        }
       },
       {
         "id": "phase-3",

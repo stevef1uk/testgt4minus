@@ -4,126 +4,139 @@ layout_root: taskboard
 
 ## Overview
 
-TaskBoard is the local-only Python 3.11+ Kanban MVP defined by SPEC. It uses
-FastAPI, built-in sqlite3, Jinja2 server-rendered HTML, and vanilla
-JavaScript. It has no authentication, ORM, external service, frontend build,
-background jobs, WebSockets, scheduler, Docker application, or credentials.
-The documented server listens on 127.0.0.1:8080.
+TaskBoard is a local-only Python 3.11+ Kanban MVP built with FastAPI,
+sqlite3, Jinja2, and vanilla browser JavaScript. It persists projects and
+tasks, supports the three Kanban states, task editing, filtering, deletion,
+and project cascade deletion. It has no authentication, ORM, external
+services, frontend compilation, Docker application, background jobs, or
+alternate deployment architecture.
 
-Database selection is the explicit create_app argument, then a nonempty
-TASKBOARD_DB_PATH value, then taskboard/taskboard.db. Repository operations
-open and close connections individually. Every connection enables foreign keys
-and busy_timeout 5000. Initialization uses idempotent DDL and writes use
-explicit transactions. DDL belongs only to taskboard/db.py; SQL access belongs
-only to taskboard/repository.py; pure validation and row mapping belong to
-taskboard/models.py; HTTP routes and dependency wiring belong to
-taskboard/main.py; and browser behavior belongs to taskboard/static/app.js.
+The package is rooted at taskboard/. Database selection is explicit
+create_app(db_path), then nonempty TASKBOARD_DB_PATH, then the SPEC fallback
+taskboard/taskboard.db. Connections open and close per repository operation,
+enable foreign keys and busy_timeout 5000, and writes use explicit
+transactions. Schema DDL belongs only to taskboard/db.py; SQL access belongs
+only to taskboard/repository.py; validation and row mapping belong to
+taskboard/models.py; HTTP wiring belongs to taskboard/main.py; and browser
+behavior belongs to taskboard/static/app.js.
 
-The HTTP contract is intentionally limited to the SPEC routes: GET /, GET /api/projects, POST /api/projects, DELETE /api/projects/{project_id}, GET /api/projects/{project_id}/tasks, POST /api/projects/{project_id}/tasks, PATCH /api/tasks/{task_id}, and DELETE /api/tasks/{task_id}. Task mutations are project-scoped and use the project identifier together with the task identifier; no alternate task prefix or method alias is part of the contract. The root response serves the template and the mounted static directory at /static; API responses are JSON and use the SPEC status codes for validation, missing resources, and malformed identifiers.
-
-The database path is resolved once by create_app: a nonempty explicit db_path wins, otherwise a nonempty TASKBOARD_DB_PATH wins, otherwise the application uses taskboard/taskboard.db relative to the repository root. Tests always pass an isolated temporary path. The application must create parent directories before connecting, must not derive a second path from the process working directory, and must never put a database under taskboard/tests or a temporary test directory unless that path was explicitly supplied.
-The canonical fallback is exactly taskboard/taskboard.db (repository-root-relative); taskboard/db.py must resolve it from the repository root rather than from an import-time or test working directory. The only environment key is TASKBOARD_DB_PATH. The route spellings and methods are exact: GET /, GET /api/projects, POST /api/projects, DELETE /api/projects/{project_id}, GET /api/projects/{project_id}/tasks, POST /api/projects/{project_id}/tasks, PATCH /api/tasks/{task_id}, and DELETE /api/tasks/{task_id}; no Docker proxy or alternate prefix is used.
-
-The delivery checks are native repository checks and do not require Docker or a Docker daemon. No Dockerfile, compose file, container image, or container-only host name is an implicit deliverable; a judge must invoke the documented Python and Playwright commands from the repository root with taskboard/ as the application directory.
-Therefore every qa_verify_command in the delivery contract must execute from the repository root using taskboard/ paths and local tools: Python phases use cd taskboard && python -m pytest with paths relative to the taskboard project, and the browser phase uses cd taskboard && npm exec playwright test -- --config playwright.config.ts. Commands must not invoke docker, docker compose, a container hostname, or require a Docker daemon; the documented host-server lifecycle remains the Playwright configuration contract.
-Workflow-profile collision correction (canonical phase IDs are phase-1-core, phase-1-app, phase-2, and phase-3; the workflow profile must mirror this delivery contract): Python tests are owned only by taskboard/tests/test_repository.py, taskboard/tests/test_api.py, and taskboard/tests/test_ui_content.py; browser tests are owned only by taskboard/playwright/taskboard.spec.ts. The generated taskboard/package-lock.json is an npm tool output, not a second implementation manifest. Each of these concrete paths appears in exactly one delivery phase, while later phases may modify shared application files without changing ownership.
+The API contract matches SPEC exactly: GET /api/health, GET /api/projects,
+POST /api/projects, DELETE /api/projects/{project_id},
+GET /api/projects/{project_id}/tasks,
+POST /api/projects/{project_id}/tasks, PATCH /api/tasks/{task_id}, and
+DELETE /api/tasks/{task_id}. API success codes are 200 for health, lists, and
+updates, 201 for creates, and 204 with an empty body for deletes. Application
+errors use the specified error object and 400 or 404; malformed integer paths
+retain FastAPI 422 behavior. The server-rendered page is the single-page UI
+and taskboard/static/app.js plus taskboard/static/style.css are served through
+the specified static paths.
 
 ## Planned file layout
 
-Every concrete SPEC and workflow-profile deliverable is listed with the
-required taskboard/ prefix.
+Every concrete SPEC deliverable is listed with the taskboard/ prefix:
 - `taskboard/pyproject.toml` — setuptools metadata and runtime/test dependencies.
-- `taskboard/README.md` — installation, server, pytest, and browser instructions.
-- `taskboard/.gitignore` — database, environment, cache, node_modules, and report exclusions.
-- `taskboard/__init__.py` — importable package marker and metadata.
-- `taskboard/main.py` — create_app, module app, request parsing, routes, and serving.
-- `taskboard/db.py` — SQLite path handling, connection configuration, and DDL.
-- `taskboard/models.py` — enum values, validation, and row-to-JSON mapping.
+- `taskboard/README.md` — installation, server, test, and browser instructions.
+- `taskboard/.gitignore` — databases, caches, environments, node_modules, and reports.
+- `taskboard/__init__.py` — importable package marker.
+- `taskboard/main.py` — app factory, API routes, page rendering, and static mounting.
+- `taskboard/db.py` — path handling, connection setup, and idempotent DDL.
+- `taskboard/models.py` — validation constants and row-to-JSON mapping.
 - `taskboard/repository.py` — parameterized project/task queries and transactions.
-- `taskboard/templates/index.html` — forms, selector, filters, columns, and state regions.
-- `taskboard/static/app.js` — API calls, state, safe rendering, controls, and filters.
-- `taskboard/static/style.css` — responsive layout, cards, forms, and visual states.
-- `taskboard/tests/conftest.py` — isolated temporary database and client fixtures.
-- `taskboard/tests/test_repository.py` — persistence, ordering, filtering, update, and cascade tests.
-- `taskboard/tests/test_api.py` — exact API, validation, status, and response-shape tests.
-- `taskboard/tests/test_ui_content.py` — root and static-content integration tests.
-- `taskboard/package.json` — Playwright development dependency only.
-- `taskboard/package-lock.json` — matching generated npm lockfile.
-- `taskboard/playwright.config.ts` — canonical host-server test configuration.
-- `taskboard/playwright/taskboard.spec.ts` — three independent browser scenarios.
+- `taskboard/templates/index.html` — project/task forms, filters, columns, and status regions.
+- `taskboard/static/app.js` — browser API calls, state, safe rendering, and controls.
+- `taskboard/static/style.css` — responsive taskboard presentation.
+- `taskboard/tests/conftest.py` — isolated temporary database fixtures.
+- `taskboard/tests/test_repository.py` — persistence and repository behavior tests.
+- `taskboard/tests/test_api.py` — API contract and validation tests.
+- `taskboard/tests/test_ui_content.py` — rendered page and static-content tests.
+- `taskboard/package.json` — Playwright development dependency.
+- `taskboard/package-lock.json` — generated matching npm lockfile.
+- `taskboard/playwright.config.ts` — host-server Playwright configuration.
+- `taskboard/playwright/taskboard.spec.ts` — independent browser scenarios.
 
 ## Module / bead ownership
 
-| File | Owns exported surface | Must not define |
+| File | Owns | Must not define |
 |---|---|---|
-| `taskboard/db.py` | connect(db_path: str) -> sqlite3.Connection; init_schema(db_path: str) -> None | routes or application queries |
-| `taskboard/models.py` | VALID_STATUSES; VALID_PRIORITIES; validate_project_name(name: str) -> str; validate_task_fields(...); project_from_row(row) -> dict; task_from_row(row) -> dict | SQLite I/O or FastAPI objects |
-| `taskboard/repository.py` | ProjectRepository; TaskRepository; list_projects() -> list[dict]; create_project(name: str) -> dict; delete_project(project_id: int) -> bool; list_tasks(project_id: int, status: str | None = None, priority: str | None = None) -> list[dict]; create_task(...) -> dict; update_task(task_id: int, changes: dict) -> dict | None; delete_task(task_id: int) -> bool | HTML, routes, or request parsing |
-| `taskboard/main.py` | create_app(db_path: str | None = None) -> FastAPI; module-level app | SQL statements or browser state |
-| `taskboard/__init__.py` | package metadata only | duplicate app construction |
-| `taskboard/templates/index.html` | semantic forms, selector, filters, columns, empty/error regions | database calls or inline application logic |
-| `taskboard/static/app.js` | browser API, rendering, filtering, editing, moving, and deletion | server validation or raw user-content HTML |
-| `taskboard/static/style.css` | responsive presentation and visual states | application data or JavaScript behavior |
-| `taskboard/tests/conftest.py` | temporary-path app and client fixtures | production behavior |
-| `taskboard/tests/test_repository.py` | repository and persistence assertions | HTTP or browser assertions |
-| `taskboard/tests/test_api.py` | API contract assertions | repository implementation or browser assertions |
-| `taskboard/tests/test_ui_content.py` | rendered page and asset assertions | persistence implementation |
-| `taskboard/playwright.config.ts` | host URL and browser configuration | application behavior |
-| `taskboard/playwright/taskboard.spec.ts` | browser acceptance scenarios and cleanup | application source |
+| `taskboard/db.py` | connect(db_path: str) -> sqlite3.Connection; init_schema(db_path: str) -> None | HTTP routes or query policy |
+| `taskboard/models.py` | VALID_STATUSES; VALID_PRIORITIES; project/task validators and row mappers | SQLite or FastAPI objects |
+| `taskboard/repository.py` | ProjectRepository; TaskRepository; project/task CRUD and filtered list operations | HTML, routes, or request parsing |
+| `taskboard/main.py` | create_app(db_path: str \| None = None) -> FastAPI; module app | SQL statements or browser state |
+| `taskboard/templates/index.html` | semantic forms, selectors, columns, and message regions | database calls or inline application logic |
+| `taskboard/static/app.js` | loading, creating, editing, moving, filtering, deleting, and safe DOM rendering | server validation |
+| `taskboard/static/style.css` | page, form, card, column, status, and responsive styling | application data or behavior |
+| `taskboard/tests/conftest.py` | temporary-path app/client fixtures | production implementation |
+| `taskboard/tests/test_repository.py` | repository assertions | HTTP or browser assertions |
+| `taskboard/tests/test_api.py` | API assertions | repository implementation |
+| `taskboard/tests/test_ui_content.py` | HTML and static asset assertions | persistence implementation |
+| `taskboard/playwright.config.ts` | host URL and browser settings | application behavior |
+| `taskboard/playwright/taskboard.spec.ts` | browser acceptance and cleanup | application source |
 
-Repositories return the exact SPEC project and task JSON shapes. Names and
-titles are trimmed and length-checked, descriptions are strings of at most
-1000 Unicode code points, status and priority use the specified enums, IDs
-sort ascending, timestamps carry explicit UTC offsets, and the
-taskboard/tasks project_id foreign key cascades project deletion. SQL writes
-are parameterized.
+Repositories return the exact project and task JSON shapes from SPEC. Project
+names and task titles are trimmed and length checked. Descriptions preserve
+content subject to the specified limit. Status and priority use only the
+specified enums, IDs are ascending, timestamps have explicit UTC offsets, and
+the taskboard/tasks project_id foreign key cascades project deletion.
 
 ## HTTP + entrypoint integration
 
-The exact routes are GET /api/health, GET and POST /api/projects, DELETE /api/projects/{project_id}, GET and POST /api/projects/{project_id}/tasks, PATCH and DELETE /api/tasks/{task_id}, GET /, and GET /static/app.js and /static/style.css. Health and lists return 200, creates 201, updates 200, and deletes 204 with an empty body. Application errors are {"error":"human-readable message"} with 400 or 404; malformed integer paths retain FastAPI 422 behavior.
+taskboard/main.py creates the FastAPI application, resolves the database path,
+initializes the schema, stores the selected path in app state, creates
+repositories per request, mounts taskboard/static, and renders
+taskboard/templates/index.html. It exports app for the documented uvicorn
+command. The API route set is exactly GET /api/health, GET /api/projects,
+POST /api/projects, DELETE /api/projects/{project_id},
+GET /api/projects/{project_id}/tasks,
+POST /api/projects/{project_id}/tasks, PATCH /api/tasks/{task_id}, and
+DELETE /api/tasks/{task_id}. No single-project GET or PUT route is added.
+The page and static resources are delivered as specified without additional
+API aliases.
 
-create_app stores the selected path in app state, initializes the schema, and
-passes that path to repositories rather than using a mutable global
-connection. It mounts taskboard/static and renders taskboard/templates/index.html
-as HTML. The module app supports
-python -m uvicorn taskboard.main:app --host 127.0.0.1 --port 8080.
-Creation ignores unknown properties and applies task defaults. PATCH accepts a
-nonempty subset of title, description, priority, and status without project
-reassignment. List filters validate independently and combine with AND.
+Project creation validates name and returns 201. Task creation verifies the
+project, applies the specified defaults, and returns 201. Task listing checks
+status and priority filters independently and combines them with AND. Task
+patching accepts a nonempty subset of title, description, priority, and
+status, never changes project ownership, and returns 200. Missing resources
+return 404; invalid application fields return the specified 400 error object;
+deletes return 204 with no body.
 
 ## Unit tests
 
-taskboard/tests/test_repository.py covers idempotent initialization, empty
-lists, ascending IDs, defaults, UTC timestamps, status and priority filters
-including conjunction, partial updates preserving omitted values, and project
-cascade deletion. taskboard/tests/test_api.py covers exact health JSON,
-project/task round trips, all specified 400 and 404 cases, invalid lengths and
-enums, empty PATCH rejection, empty arrays, bodyless 204 deletes, composed
-filters, and ID ordering. taskboard/tests/conftest.py supplies a fresh
-temporary database per test and never touches taskboard/taskboard.db.
-taskboard/tests/test_ui_content.py checks real TaskBoard HTML, both forms, all
-three headings, and nonempty static responses.
+taskboard/tests/test_repository.py proves idempotent schema initialization,
+empty lists, deterministic project ordering, task defaults and timestamps,
+status/priority filters including conjunction, partial updates preserving
+omitted values, and project cascade deletion.
+
+taskboard/tests/test_api.py proves exact health JSON, project and task
+round trips, all specified validation failures, missing-resource behavior,
+empty PATCH rejection, empty arrays, bodyless deletes, composed filters, and
+ID ordering. taskboard/tests/conftest.py gives each test an explicit temporary
+database and prevents use of the runtime database.
+
+taskboard/tests/test_ui_content.py proves the rendered page contains the
+TaskBoard heading, project and task forms, all three column headings, and
+nonempty responses from taskboard/static/app.js and
+taskboard/static/style.css.
 
 ## Integration and testing
 
-Commands run from taskboard/. Ensure Python and Node dependencies are installed
-before test review; test-review commands must not install packages. Phase 1 runs only the repository/API
-pytest verification command. Phase 2 runs python -m pytest -q taskboard/tests. Phase 3
-runs the pytest suite and
-./node_modules/.bin/playwright test --config playwright.config.ts playwright
-against an already-running server at 127.0.0.1:8080. Browser assertions inspect real
-task text and state changes, not placeholders or status codes alone. Unique
-project names and cleanup make scenarios independent.
+Run project checks from taskboard/. Install dependencies before review; review
+commands themselves do not install packages. The core phase runs
+python -m pytest -q tests/test_repository.py. The application and Kanban
+phases run python -m pytest -q tests. The browser phase runs the pytest suite
+and the canonical Playwright command against the already-running local server.
+Assertions must prove state changes and rendered content, not merely status
+codes or placeholder existence. Browser scenarios use unique project names
+and clean up their created data.
 
 ## E2E / integration testing
 
-Only taskboard/playwright.config.ts and
-taskboard/playwright/taskboard.spec.ts are canonical browser files. The
-configuration targets the existing host server and creates no second
-application or container. The scenarios check the real heading and columns,
-create and move a task from todo through doing to done and delete it, and
-filter two differently prioritized tasks before restoring both. Done cards
-hide or disable Move forward.
+taskboard/playwright.config.ts targets the existing host server and does not
+start a second application or container. taskboard/playwright/taskboard.spec.ts
+contains three independent scenarios: initial heading and columns; project
+and task creation followed by todo-to-doing-to-done movement and deletion; and
+two-priority filtering with reset. Assertions inspect real task text and
+column state.
 
 ## Delivery phases
 
@@ -131,7 +144,7 @@ hide or disable Move forward.
 delivery_phases:
   - id: phase-1-core
     title: "Foundation and projects: core"
-    spec_focus: Foundation and projects
+    spec_focus: "Foundation and projects"
     required_files:
       - taskboard/pyproject.toml
       - taskboard/README.md
@@ -141,14 +154,14 @@ delivery_phases:
       - taskboard/models.py
       - taskboard/repository.py
       - taskboard/tests/test_repository.py
-    qa_verify_command: "cd taskboard && python -m pytest -q tests/test_repository.py"
+    qa_verify_command: 'cd taskboard && python -m pytest -q tests/test_repository.py'
     depends_on: []
     file_dependencies:
       taskboard/repository.py: [taskboard/db.py, taskboard/models.py]
       taskboard/tests/test_repository.py: [taskboard/db.py, taskboard/models.py, taskboard/repository.py]
   - id: phase-1-app
     title: "Foundation and projects: runnable app"
-    spec_focus: Foundation and projects
+    spec_focus: "Foundation and projects"
     required_files:
       - taskboard/main.py
       - taskboard/templates/index.html
@@ -156,104 +169,93 @@ delivery_phases:
       - taskboard/static/style.css
       - taskboard/tests/conftest.py
       - taskboard/tests/test_api.py
-    qa_verify_command: "cd taskboard && python -m pytest -q tests"
+    qa_verify_command: 'cd taskboard && python -m pytest -q tests'
     depends_on: [phase-1-core]
     file_dependencies:
       taskboard/main.py: [taskboard/db.py, taskboard/models.py, taskboard/repository.py]
       taskboard/tests/conftest.py: [taskboard/main.py]
       taskboard/tests/test_api.py: [taskboard/tests/conftest.py, taskboard/main.py]
   - id: phase-2
-    title: Tasks and Kanban UI
-    spec_focus: Tasks and Kanban UI
+    title: "Tasks and Kanban UI"
+    spec_focus: "Tasks and Kanban UI"
     required_files:
       - taskboard/tests/test_ui_content.py
       - taskboard/templates/index.html
       - taskboard/static/app.js
       - taskboard/static/style.css
-      - taskboard/tests/conftest.py
       - taskboard/tests/test_repository.py
       - taskboard/tests/test_api.py
-    qa_verify_command: "cd taskboard && python -m pytest -q tests"
+    qa_verify_command: 'cd taskboard && python -m pytest -q tests'
     depends_on: [phase-1-app]
+    file_dependencies:
+      taskboard/tests/test_ui_content.py: [taskboard/main.py, taskboard/templates/index.html, taskboard/static/app.js, taskboard/static/style.css]
   - id: phase-3
-    title: Filters, browser tests, and release check
-    spec_focus: Filters, browser tests, and release check
+    title: "Filters, browser tests, and release check"
+    spec_focus: "Filters, browser tests, and release check"
     required_files:
       - taskboard/package.json
       - taskboard/package-lock.json
       - taskboard/playwright.config.ts
       - taskboard/playwright/taskboard.spec.ts
-    qa_verify_command: "cd taskboard && python -m pytest -q tests && ./node_modules/.bin/playwright test --config playwright.config.ts playwright"
+    qa_verify_command: 'cd taskboard && python -m pytest -q tests && ./node_modules/.bin/playwright test --config playwright.config.ts playwright'
     depends_on: [phase-2]
     file_dependencies:
       taskboard/playwright.config.ts: [taskboard/package.json]
       taskboard/playwright/taskboard.spec.ts: [taskboard/package.json, taskboard/package-lock.json, taskboard/playwright.config.ts, taskboard/main.py, taskboard/templates/index.html, taskboard/static/app.js, taskboard/static/style.css]
 ```
 
-The machine-readable contract uses repository-root taskboard/ paths,
-matching the workflow profile and planned layout. The Foundation and projects
-SPEC phase is implemented in two dependent subphases to respect the ten-file
-limit: phase-1-core owns the package metadata, documentation, database,
-models, repository, and repository tests; phase-1-app owns the runnable app,
-HTML/static assets, fixtures, and API tests. Both retain the original SPEC
-focus. tasks-and-kanban-ui owns `taskboard/tests/test_ui_content.py`; and
-filters-browser-tests-and-release-check owns
-`taskboard/playwright/taskboard.spec.ts` (with its configuration and npm
-manifests). Phase-1-app creates the initial runnable foundation and verifies
-the repository and API tests. Phase 2 extends those canonical files in place
-and adds the content test for task and Kanban behavior. Phase 3 adds the
-Playwright manifest, generated lockfile, configuration, and scenarios while
-completing filters. The graph is acyclic, each profile deliverable has an
-explicit phase owner, and each dependency key is owned by its declaring phase.
-
-**Delivery ownership cross-check**
-
-The foundation-and-projects SPEC scope is split between phase-1-core and phase-1-app. Together they own the package metadata, documentation, ignore rules, package marker, app, database, models, repository, template, static assets, fixtures, and repository/API tests. The tasks-and-kanban-ui phase owns the newly introduced `taskboard/tests/test_ui_content.py` and extends the already-owned application files in place; it does not create alternate copies. The filters-browser-tests-and-release-check phase owns `taskboard/package.json`, `taskboard/package-lock.json`, `taskboard/playwright.config.ts`, and `taskboard/playwright/taskboard.spec.ts`. Its browser spec consumes the existing application and canonical static paths. Thus every literal profile required_files entry has exactly one first-delivery phase owner, while later phases may extend earlier-owned files as required by SPEC.
+Phase 1 is split exactly as SPEC requires to keep each first-delivery set
+under ten files. Phase 1 core establishes packaging, schema, models,
+repository, and repository tests. Phase 1 app establishes the runnable
+application, initial page and static assets, fixtures, and API tests. Phase 2
+extends those canonical files and adds the UI-content test for task and Kanban
+behavior. Phase 3 adds the generated npm files and canonical browser harness
+while completing filters and release verification. Later phases may modify
+earlier-owned files but do not create duplicates.
 
 ## Requirements
 
 ### phase-1-core
 
 Deliver package metadata, documentation, ignore rules, package marker, schema,
-models, repository, and repository tests. Use idempotent DDL, foreign keys,
-busy_timeout 5000, UTC timestamps, projects and tasks tables, the
-taskboard/tasks project_id index, and parameterized writes. Install the package
-and run the isolated repository tests.
+models, repository operations, and repository tests. Use idempotent DDL,
+foreign keys, the tasks project index, busy_timeout 5000, UTC timestamps, and
+parameterized writes. Verify the repository tests after dependencies are
+already installed.
 
 ### phase-1-app
 
-Deliver the app factory, health/project routes, real root HTML/static mounting,
-fixtures, and API tests. Verify exact health JSON, project CRUD, real HTML, and
-static delivery while preserving the Phase-1-core repository tests.
+Deliver the app factory, health and project API, real page rendering, static
+mounting, isolated fixtures, and API tests. The app contract is limited to
+GET /api/health, GET /api/projects, POST /api/projects,
+DELETE /api/projects/{project_id}, and the rendered page/static resources.
+Do not add single-project retrieval or update methods. Verify the full pytest
+gate and real project CRUD behavior.
 
 ### phase-2
 
-Extend the Phase 1 application in place with task repository operations,
-task routes, validation, project selection, task creation/edit/delete,
-three Kanban columns, move-forward behavior, and visible empty/error states.
-Add taskboard/tests/test_ui_content.py and preserve all Phase 1 assertions.
-The phase gate proves real create, move, edit, and delete state changes.
+Extend the canonical application in place with task repository operations,
+task routes, validation, project selection, task creation/edit/delete, three
+Kanban columns, move-forward behavior, and visible empty/error states. Add
+taskboard/tests/test_ui_content.py and preserve all earlier assertions. The
+gate must demonstrate real create, move, edit, and delete state changes.
 
 ### phase-3
 
 Complete status and priority filters and full pytest coverage. Add the
-Playwright manifest, matching generated lockfile, host configuration, and
-three independent scenarios under taskboard/playwright/. Ensure Node
-dependencies are installed before test review; the release verification runs pytest and
-the specified already-installed Playwright suite against 127.0.0.1:8080. No
-extra routes, aliases, deployment mechanism, or
-out-of-scope dependency is introduced.
+Playwright manifest, generated lockfile, host configuration, and three
+independent browser scenarios. Verify pytest and the already-installed
+Playwright suite against the local server. Introduce no extra routes, aliases,
+deployment mechanism, or out-of-scope dependency.
 
-The browser UI keeps navigation within the single-page root using hash anchors such as /#project-{project_id} for project selection and /#project-{project_id}/tasks for its task view; it does not navigate to bare project or task paths. The hash is client state only: API calls still use the exact project-scoped task routes above, including PATCH and DELETE with both identifiers.
 ## Acceptance mapping
 
-The architecture maps every SPEC goal to ordered phase gates. SQLite
-persistence, schema invariants, and cascade behavior are owned by
+The architecture maps SPEC goals to ordered phase gates. Persistence,
+constraints, timestamps, and cascade behavior are owned by
 taskboard/db.py and taskboard/repository.py. Validation and JSON mapping are
-isolated in taskboard/models.py. Exact routes, status codes, errors, database
-selection, and app wiring are owned by taskboard/main.py. Real markup and
-safe browser behavior are owned by taskboard/templates/index.html,
-taskboard/static/app.js, and taskboard/static/style.css. Repository, API,
-content, and browser tests provide behavioral evidence. Every profile path is
-listed with taskboard/ prefix, ownership is explicit, dependencies are
-ordered, and forbidden scope is absent.
+owned by taskboard/models.py. Exact API behavior and application wiring are
+owned by taskboard/main.py. Real markup and safe browser behavior are owned by
+taskboard/templates/index.html, taskboard/static/app.js, and
+taskboard/static/style.css. Repository, API, content, and browser tests provide
+behavioral evidence for every milestone, with all planned files assigned to a
+concrete delivery phase.
