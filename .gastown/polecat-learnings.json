@@ -3,13 +3,6 @@
   "entries": [
     {
       "stack": "python",
-      "rule": "QA lesson: {\"summary\":\"Stage 1 spec compliance fails: db.py adds an unused `description` column to `projects` that is not in the SPEC dat...",
-      "source": "qa_rework",
-      "hits": 1,
-      "updated_at": "2026-11-19T09:51:23Z"
-    },
-    {
-      "stack": "python",
       "rule": "Test review lesson: Repair implementation beads: te-c2c",
       "source": "qa_rework",
       "hits": 2,
@@ -59,6 +52,14 @@
       "source": "qa_rework",
       "hits": 3,
       "updated_at": "2026-11-20T18:06:18Z"
+    },
+    {
+      "stack": "python",
+      "rule": "Avoid in repository.py: E ModuleNotFoundError: No module named 'taskboard.repository'",
+      "source": "verify_fix",
+      "bead_path": "taskboard/repository.py",
+      "hits": 1,
+      "updated_at": "2026-11-21T18:34:28Z"
     }
   ]
 }
