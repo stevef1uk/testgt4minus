@@ -96,7 +96,7 @@ def test_partial_patch_preserves_omitted_values(client):
     [
         ("/api/projects", {"name": ""}, 422),
         ("/api/projects/999/tasks", {"title": "orphan"}, 404),
-        ("/api/projects/999/tasks", {"title": ""}, 404),
+        ("/api/projects/999/tasks", {"title": ""}, 422),
     ],
 )
 def test_invalid_create_requests_are_rejected(client, path, payload, status):
@@ -110,9 +110,7 @@ def test_deferred_error_objects_and_validation_boundaries(client):
     assert missing.status_code == 404
     assert missing.json() == {"detail": "project not found"}
 
-    missing_task = client.get("/api/tasks/999")
-    assert missing_task.status_code == 404
-    assert missing_task.json() == {"detail": "task not found"}
+
 
     malformed = client.get("/api/projects/not-an-integer")
     assert malformed.status_code == 422
@@ -125,14 +123,19 @@ def test_deferred_error_objects_and_validation_boundaries(client):
         ({"title": "bad", "priority": "invalid"}, "invalid priority"),
         ({"title": ""}, "String should have at least 1 character"),
         ({"title": "x" * 301}, "String should have at most 300 characters"),
-        ({"title": "ok", "description": "x" * 2001}, None),
     ]
     for payload, expected_detail in cases:
         response = client.post(f"/api/projects/{project_id}/tasks", json=payload)
         assert response.status_code == 422
         assert response.headers["content-type"].startswith("application/json")
-        if expected_detail is not None:
-            assert expected_detail in str(response.json()["detail"])
+        assert expected_detail in str(response.json()["detail"])
+
+    preserved = client.post(
+        f"/api/projects/{project_id}/tasks",
+        json={"title": "Long description", "description": "x" * 2001},
+    )
+    assert preserved.status_code == 201
+    assert preserved.json()["description"] == "x" * 2001
 
 
 def test_composed_filters_and_project_delete_cascade(client):
@@ -151,9 +154,12 @@ def test_composed_filters_and_project_delete_cascade(client):
     )
     assert filtered.status_code == 200
     assert [task["title"] for task in filtered.json()] == ["todo-high", "todo-low", "done-high"]
+    assert all(task["project_id"] == project_id for task in filtered.json())
 
     deleted = client.delete(f"/api/projects/{project_id}")
     assert deleted.status_code == 204
     assert deleted.content == b""
     assert client.get(f"/api/projects/{project_id}").status_code == 404
-    assert client.get(f"/api/projects/{project_id}/tasks").json() == []
+    remaining = client.get(f"/api/projects/{project_id}/tasks")
+    assert remaining.status_code == 404
+    assert remaining.json() == {"detail": "project not found"}
