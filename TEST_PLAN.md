@@ -12,6 +12,7 @@ Scenarios:
 - Initialize a new temporary database twice and verify empty project/task collections, idempotent schema setup, foreign keys, and busy timeout.
 - Create projects and tasks, verify trimmed values, ascending IDs, default todo/medium values, explicit UTC timestamps, and status/priority filters including AND composition.
 - Exercise the project-name length boundary: accept an 80-character name and reject an 81-character name.
+- Exercise task-title boundaries: accept a 120-character title and reject a 121-character title; exercise description boundaries by accepting a 1000-character description and rejecting a 1001-character description.
 - Patch selected task fields while preserving omitted fields, then delete a project and verify its tasks cascade away.
 Assertions:
 - Repository results match the specified decoded project/task shapes and deterministic ID ordering.
