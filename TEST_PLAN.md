@@ -18,19 +18,19 @@ Assertions:
 - A deleted project leaves no child tasks, while an empty/new database returns `[]`.
 
 ### phase-1-app
-Requirement: Deliver the runnable FastAPI app, health and project/task HTTP routes, isolated fixture, real HTML root, and static asset serving while preserving the core repository contract.
+Requirement: Deliver the runnable FastAPI app, health and project CRUD HTTP routes, isolated fixture, real HTML root, and static asset serving while preserving the core repository contract.
 Level: integration
 Test file: taskboard/tests/test_api.py
 Bead ID: tm-j2d
 Phase: phase-1-app
 Scenarios:
-- Use the fresh temporary-database client fixture to check health, root HTML, JavaScript, and CSS responses.
-- Exercise project and task create/list/patch/delete round trips, including defaults, ordering, composed filters, empty arrays, and bodyless 204 responses.
-- Submit invalid names, titles, descriptions, enums, empty PATCH payloads, missing resources, and malformed integer paths.
+- Use the fresh temporary-database client fixture to verify `GET /api/health` and confirm the isolated test database is used rather than runtime `taskboard.db`.
+- Exercise project create/list/patch/delete round trips, including required validation, deterministic ordering, missing-resource behavior, and bodyless 204 deletion.
+- Request `/` and the canonical JavaScript and CSS asset paths, checking the real HTML shell and successful static responses.
 Assertions:
-- `/api/health` is exactly `{"status":"ok"}`; success status codes, JSON fields/types, content types, and no-body deletes match SPEC.
-- API-level failures use the specified 400/404 error object, while malformed integer paths retain 422; isolated tests do not touch runtime `taskboard.db`.
-- Created task state and project relationship persist across requests, and project deletion cascades through the API.
+- `/api/health` returns status 200 and decoded JSON `{"status":"ok"}`; project responses have the specified decoded fields/types and status codes.
+- Invalid project names and missing projects produce the documented API error responses; delete returns 204 with no response body.
+- Root and static responses have the specified HTML/asset content types and nonempty content, and API tests do not modify the runtime database.
 
 ### phase-2
 Requirement: Extend the application with project selection, task creation/edit/delete, three Kanban columns, move-forward behavior, and visible empty/error states.
