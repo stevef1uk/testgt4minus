@@ -10,13 +10,6 @@
     },
     {
       "stack": "python",
-      "rule": "QA lesson: {\"summary\":\"Stage 2 (code quality / YAGNI) fails: main.py, templates/index.html, static/app.js, and static/style.css include t...",
-      "source": "qa_rework",
-      "hits": 1,
-      "updated_at": "2026-11-20T17:55:49Z"
-    },
-    {
-      "stack": "python",
       "rule": "Avoid in test_repository.py: E TypeError: create_task() got an unexpected keyword argument 'status'",
       "source": "verify_fix",
       "bead_path": "taskboard/tests/test_repository.py",
@@ -29,14 +22,6 @@
       "source": "qa_rework",
       "hits": 3,
       "updated_at": "2026-11-20T18:06:18Z"
-    },
-    {
-      "stack": "python",
-      "rule": "Avoid in repository.py: E ModuleNotFoundError: No module named 'taskboard.repository'",
-      "source": "verify_fix",
-      "bead_path": "taskboard/repository.py",
-      "hits": 1,
-      "updated_at": "2026-11-21T18:34:28Z"
     },
     {
       "stack": "python",
@@ -59,6 +44,22 @@
       "source": "qa_rework",
       "hits": 1,
       "updated_at": "2026-11-21T18:42:53Z"
+    },
+    {
+      "stack": "python",
+      "rule": "Avoid in models.py: E ImportError: cannot import name 'VALID_PRIORITIES' from 'models' (/home/stevef/gt/testgt4m/mayor/rig/taskboard/mode...",
+      "source": "verify_fix",
+      "bead_path": "taskboard/models.py",
+      "hits": 1,
+      "updated_at": "2026-11-21T18:49:59Z"
+    },
+    {
+      "stack": "python",
+      "rule": "Keep repository tests aligned with the SPEC schema; project records must not assert a description field.",
+      "source": "agent",
+      "bead_path": "taskboard/repository.py",
+      "hits": 1,
+      "updated_at": "2026-11-21T18:52:02Z"
     }
   ]
 }

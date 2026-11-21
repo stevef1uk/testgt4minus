@@ -12,6 +12,8 @@ from .models import (
     project_from_row,
     task_to_dict,
     task_from_row,
+    validate_project_name,
+    validate_task_fields,
 )
 
 
@@ -43,9 +45,7 @@ class ProjectRepository:
         return [_project(row) for row in rows]
 
     def create_project(self, name: str) -> dict[str, Any]:
-        name = name.strip()
-        if not name or len(name) > 80:
-            raise ValueError("project name must be 1-80 characters")
+        name = validate_project_name(name)
         now = _utc_now()
         with db.connect(self.db_path) as connection:
             cursor = connection.execute(
@@ -103,15 +103,16 @@ class TaskRepository:
         status: str = "todo",
         priority: str = "medium",
     ) -> dict[str, Any]:
-        title = title.strip()
-        if not title or len(title) > 120:
-            raise ValueError("task title must be 1-120 characters")
-        if not isinstance(description, str) or len(description) > 2000:
-            raise ValueError("task description must be at most 2000 characters")
-        if status not in {"todo", "in_progress", "done"}:
-            raise ValueError("invalid task status")
-        if priority not in {"low", "medium", "high"}:
-            raise ValueError("invalid task priority")
+        fields = validate_task_fields(
+            title=title,
+            description=description,
+            status=status,
+            priority=priority,
+        )
+        title = fields["title"]
+        description = fields["description"]
+        status = fields["status"]
+        priority = fields["priority"]
         with db.connect(self.db_path) as connection:
             if connection.execute(
                 "SELECT 1 FROM projects WHERE id = ?", (project_id,)
@@ -146,23 +147,16 @@ class TaskRepository:
         updates = {key: value for key, value in changes.items() if key in allowed}
         if not updates:
             return self._get(task_id)
-        if "title" in updates:
-            updates["title"] = str(updates["title"]).strip()
-            if not updates["title"] or len(updates["title"]) > 120:
-                raise ValueError("task title must be 1-120 characters")
-        if "description" in updates and (
-            not isinstance(updates["description"], str)
-            or len(updates["description"]) > 2000
-        ):
-            raise ValueError("task description must be at most 2000 characters")
-        if "status" in updates and updates["status"] not in {
-            "todo", "in_progress", "done"
-        }:
-            raise ValueError("invalid task status")
-        if "priority" in updates and updates["priority"] not in {
-            "low", "medium", "high"
-        }:
-            raise ValueError("invalid task priority")
+        current = self._get(task_id)
+        if current is None:
+            return None
+        fields = validate_task_fields(
+            title=updates.get("title", current["title"]),
+            description=updates.get("description", current["description"]),
+            status=updates.get("status", current["status"]),
+            priority=updates.get("priority", current["priority"]),
+        )
+        updates.update(fields)
         assignments = ", ".join(f"{key} = ?" for key in updates)
         values = list(updates.values()) + [_utc_now(), task_id]
         with db.connect(self.db_path) as connection:

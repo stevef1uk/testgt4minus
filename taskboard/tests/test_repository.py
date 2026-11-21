@@ -45,7 +45,7 @@ def test_projects_and_tasks_have_defaults_and_ascending_ids(repositories):
         first["id"], second["id"]
     ]
     assert first["name"] == "Alpha"
-    assert first["description"] == ""
+    assert "description" not in first
     assert first["created_at"].endswith("+00:00")
     assert second["id"] > first["id"]
     task = tasks.create_task(first["id"], "Ship it")
@@ -81,16 +81,16 @@ def test_task_filters_compose_and_partial_update_preserves_values(repositories):
     projects, tasks = repositories
     project = projects.create_project("Project")
     high = tasks.create_task(
-        project["id"], "High", priority="high", status="in_progress"
+        project["id"], "High", priority="high", status="doing"
     )
     tasks.create_task(project["id"], "Low", priority="low", status="todo")
     assert [item["id"] for item in tasks.list_tasks(
-        project["id"], "in_progress", "high"
+        project["id"], "doing", "high"
     )] == [high["id"]]
     updated = tasks.update_task(high["id"], {"title": "Renamed"})
     assert updated["title"] == "Renamed"
     assert updated["priority"] == "high"
-    assert updated["status"] == "in_progress"
+    assert updated["status"] == "doing"
     assert tasks.update_task(999, {"title": "missing"}) is None
 
 

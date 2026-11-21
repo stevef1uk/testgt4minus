@@ -5,15 +5,14 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 from typing import Any, Mapping
 
-STATUSES = ("todo", "in_progress", "done")
-VALID_STATUSES = frozenset(STATUSES)
+VALID_STATUSES = frozenset({"todo", "doing", "done"})
+VALID_PRIORITIES = frozenset({"low", "medium", "high"})
 
 
 @dataclass(frozen=True, slots=True)
 class Project:
     id: int
     name: str
-    description: str
     created_at: str
 
 
@@ -24,7 +23,7 @@ class Task:
     title: str
     description: str
     status: str
-    position: int
+    priority: str
     created_at: str
     updated_at: str
 
@@ -33,11 +32,46 @@ def _value(row: Mapping[str, Any], key: str, default: Any = None) -> Any:
     return row[key] if key in row.keys() else default
 
 
+def validate_project_name(name: str) -> str:
+    value = str(name).strip()
+    if not value:
+        raise ValueError("project name is required")
+    if len(value) > 100:
+        raise ValueError("project name must be at most 100 characters")
+    return value
+
+
+def validate_task_fields(
+    *,
+    title: str,
+    description: str,
+    status: str,
+    priority: str,
+) -> dict[str, str]:
+    clean_title = str(title).strip()
+    clean_description = str(description).strip()
+    if not clean_title:
+        raise ValueError("task title is required")
+    if len(clean_title) > 120:
+        raise ValueError("task title must be 1-120 characters")
+    if len(clean_description) > 1000:
+        raise ValueError("task description must be at most 1000 characters")
+    if status not in VALID_STATUSES:
+        raise ValueError("invalid task status")
+    if priority not in VALID_PRIORITIES:
+        raise ValueError("invalid task priority")
+    return {
+        "title": clean_title,
+        "description": clean_description,
+        "status": status,
+        "priority": priority,
+    }
+
+
 def project_from_row(row: Mapping[str, Any]) -> Project:
     return Project(
         id=int(row["id"]),
         name=str(row["name"]),
-        description=str(_value(row, "description", "")),
         created_at=str(_value(row, "created_at", "")),
     )
 
@@ -49,7 +83,7 @@ def task_from_row(row: Mapping[str, Any]) -> Task:
         title=str(row["title"]),
         description=str(_value(row, "description", "")),
         status=str(_value(row, "status", "todo")),
-        position=int(_value(row, "position", 0)),
+        priority=str(_value(row, "priority", "medium")),
         created_at=str(_value(row, "created_at", "")),
         updated_at=str(_value(row, "updated_at", "")),
     )
