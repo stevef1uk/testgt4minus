@@ -23,6 +23,9 @@ CREATE TABLE IF NOT EXISTS tasks (
     created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%f','now') || '+00:00'),
     updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%f','now') || '+00:00')
 );
+
+CREATE INDEX IF NOT EXISTS idx_tasks_project_status_priority
+ON tasks(project_id, status, priority);
 """
 
 
