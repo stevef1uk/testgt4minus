@@ -1,19 +1,23 @@
-# Test Review — Phase 1
+# Test Review — phase-1-core
 
 ## Summary
-Tests execute successfully (16 passed), but phase verification is insufficient for the active requirements. The planned tests exist and contain real assertions, yet key SPEC boundary and error-contract assertions are missing or inverted.
+Partial coverage; phase verify passed, but the repaired API test still asserts the wrong SPEC contract and repository negative tests do not prove invalid-write isolation.
 
 ## Per-requirement results
 
 ### phase-1-core — FAIL
 - Test file: taskboard/tests/test_repository.py
-- Verify result: passed — 16 passed, 1 warning
-- Notes: The repository suite exercises persistence, filtering, updates, cascade deletion, timestamps, and schema settings, but it does not cover the planned/SPEC-required boundaries. It tests 201-character project names and titles rather than the specified 81/121-character limits, and it has no assertions for the 80/120-character accepted boundaries, 1000/1001-character descriptions, or unknown status/priority rejection.
+- Verify result: passed — 7 passed, 1 warning.
+- Notes: The file now contains real boundary and enum assertions: 80/81 project names, 120/121 titles, 1000/1001 descriptions, and invalid status/priority. However, the negative cases only assert `ValueError`; they do not assert that the rejected attempts leave the repository unchanged, which is an assertion required by the plan and architecture.
+- Evidence: {"file":"taskboard/tests/test_repository.py","line":89,"excerpt":"tasks.create_task(boundary_project[\"id\"], \"x\" * 121)"}
+- Evidence: {"file":"taskboard/tests/test_repository.py","line":97,"excerpt":"tasks.create_task(boundary_project[\"id\"], \"Task\", priority=\"invalid\")"}
 
-### phase-1-app — FAIL
+### phase-1-app — FAIL (deferred from the active phase gate)
 - Test file: taskboard/tests/test_api.py
-- Verify result: passed — 16 passed, 1 warning
-- Notes: The API suite has substantive route assertions, but its validation/error coverage conflicts with the SPEC. It expects a 200/201 response for a 2001-character description instead of asserting rejection at 1001 characters, and it asserts `{"detail": ...}` for a documented application error that must be `{"error": ...}`. The suite therefore cannot establish the required API contract or invalid-write non-persistence.
+- Verify result: not part of the active phase-1-core verify command.
+- Notes: The repaired API scenarios remain incorrect against SPEC. The 2001-character description is accepted with status 201 instead of being required to return 400 with a decoded `{\"error\": ...}` object, and the test asserts undocumented `detail` responses for missing resources and validation instead of the required application error object. It also does not verify that the rejected write is absent from a subsequent GET.
+- Evidence: {"file":"taskboard/tests/test_api.py","line":137,"excerpt":"assert preserved.status_code == 201"}
+- Evidence: {"file":"taskboard/tests/test_api.py","line":138,"excerpt":"assert preserved.json()[\"description\"] == \"x\" * 2001"}
 
 ## Overall assessment
-FAIL. Reopen tm-ns3 for Test repair: taskboard/tests/test_repository.py — add exact 80/81 project-name, 120/121 task-title, 1000/1001 description, and invalid status/priority assertions, including valid boundary persistence. Reopen tm-ssd for Implementation repair: taskboard/tests/test_api.py — correct the API validation/error assertions and implementation behavior so overlong descriptions return the documented 400 `{"error": ...}` object and invalid writes are absent from subsequent reads. Re-run the exact phase gate afterward.
+FAIL. Reopen tm-ns3 for Test repair: taskboard/tests/test_repository.py — add explicit post-rejection repository-state assertions for the overlong project name, overlong title/description, and invalid status/priority cases. Reopen tm-ssd for Implementation repair: taskboard/tests/test_api.py — replace the 2001-character acceptance and undocumented `detail` assertions with SPEC-required HTTP 400 and `{\"error\": ...}` checks, then assert invalid writes are absent from subsequent GET responses. The phase-1-core repository gate is green, but the repaired findings are not fully covered.
