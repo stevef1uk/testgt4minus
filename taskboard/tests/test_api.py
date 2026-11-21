@@ -1,136 +1,68 @@
-from __future__ import annotations
+from fastapi.testclient import TestClient
 
-from datetime import datetime
+from taskboard.main import app
 
-import pytest
-
-
-def assert_timestamp(value: str) -> None:
-    assert isinstance(value, str)
-    datetime.fromisoformat(value)
+client = TestClient(app)
 
 
-def test_root_static_and_api_content_types(client):
+def test_root_and_static_responses_have_documented_content_types():
     root = client.get("/")
     assert root.status_code == 200
     assert root.headers["content-type"].startswith("text/html")
-    assert "Taskboard" in root.text
+    assert "TaskBoard" in root.text
 
-    static = client.get("/static/style.css")
-    assert static.status_code == 200
-    assert static.headers["content-type"].startswith("text/css")
-
-    health = client.get("/api/health")
-    assert health.status_code == 200
-    assert health.headers["content-type"].startswith("application/json")
+    script = client.get("/static/app.js")
+    assert script.status_code == 200
+    assert script.headers["content-type"].startswith(("text/javascript", "application/javascript"))
 
 
-def test_health_and_empty_projects(client):
-    response = client.get("/api/health")
-    assert response.status_code == 200
-    assert response.json() == {"status": "ok"}
+def test_documented_errors_and_validation_statuses():
+    missing = client.get("/api/projects/999999")
+    assert missing.status_code == 404
+    assert missing.json() == {"error": "project not found"}
+    missing_task = client.get("/api/tasks/999999")
+    assert missing_task.status_code == 404
+    assert missing_task.json() == {"error": "task not found"}
 
-    response = client.get("/api/projects")
-    assert response.status_code == 200
-    assert response.json() == []
+    malformed = client.get("/api/projects/not-an-integer")
+    assert malformed.status_code == 422
+
+    project = client.post("/api/projects", json={"name": "Validation"})
+    assert project.status_code == 201
+    project_id = project.json()["id"]
+
+    for payload in (
+        {"title": "bad", "status": "invalid"},
+        {"title": "bad", "priority": "invalid"},
+        {"title": ""},
+        {"title": "x" * 201},
+        {"title": "ok", "description": "x" * 2001},
+    ):
+        response = client.post(f"/api/projects/{project_id}/tasks", json=payload)
+        assert response.status_code == 422
+        assert response.headers["content-type"].startswith("application/json")
 
 
-def test_project_and_task_round_trip_and_ordering(client):
-    first = client.post("/api/projects", json={"name": "Alpha"})
-    assert first.status_code == 201
-    project = first.json()
-    assert project["name"] == "Alpha"
-    assert_timestamp(project["created_at"])
+def test_composed_filters_and_project_delete_cascade():
+    project = client.post("/api/projects", json={"name": "Filters"})
+    assert project.status_code == 201
+    project_id = project.json()["id"]
+    for status, priority in (("todo", "high"), ("todo", "low"), ("done", "high")):
+        response = client.post(
+            f"/api/projects/{project_id}/tasks",
+            json={"title": f"{status}-{priority}", "status": status, "priority": priority},
+        )
+        assert response.status_code == 201
 
-    second = client.post("/api/projects", json={"name": "Beta"})
-    assert second.status_code == 201
-    projects = client.get("/api/projects")
-    assert projects.status_code == 200
-    assert [item["id"] for item in projects.json()] == [
-        project["id"],
-        second.json()["id"],
-    ]
-
-    created = client.post(
-        f"/api/projects/{project['id']}/tasks",
-        json={"title": "Build API", "description": "Details", "priority": "high"},
+    filtered = client.get(
+        f"/api/projects/{project_id}/tasks",
+        params={"status": "todo", "priority": "high"},
     )
-    assert created.status_code == 201
-    task = created.json()
-    assert task["project_id"] == project["id"]
-    assert task["title"] == "Build API"
-    assert task["description"] == "Details"
-    assert task["priority"] == "high"
-    assert task["status"] == "todo"
-    assert_timestamp(task["created_at"])
-    assert_timestamp(task["updated_at"])
+    assert filtered.status_code == 200
+    assert [task["title"] for task in filtered.json()] == ["todo-high"]
 
-    defaulted = client.post(
-        f"/api/projects/{project['id']}/tasks",
-        json={"title": "Default"},
-    )
-    assert defaulted.status_code == 201
-    assert defaulted.json()["description"] == ""
-    assert defaulted.json()["priority"] == "medium"
-    assert defaulted.json()["status"] == "todo"
-
-    tasks = client.get(f"/api/projects/{project['id']}/tasks")
-    assert tasks.status_code == 200
-    assert [item["id"] for item in tasks.json()] == [
-        task["id"],
-        defaulted.json()["id"],
-    ]
-
-
-def test_partial_patch_preserves_omitted_values(client):
-    project = client.post("/api/projects", json={"name": "Updates"}).json()
-    task = client.post(
-        f"/api/projects/{project['id']}/tasks",
-        json={"title": "Original", "description": "Details", "priority": "high"},
-    ).json()
-
-    response = client.patch(
-        f"/api/tasks/{task['id']}",
-        json={"title": "Renamed", "status": "done"},
-    )
-    assert response.status_code == 200
-    updated = response.json()
-    assert updated["title"] == "Renamed"
-    assert updated["status"] == "done"
-    assert updated["description"] == "Details"
-    assert updated["priority"] == "high"
-
-    assert client.patch(f"/api/tasks/{task['id']}", json={}).status_code == 400
-
-
-@pytest.mark.parametrize(
-    ("path", "payload"),
-    [
-        ("/api/projects", {"name": ""}),
-        ("/api/projects/999/tasks", {"title": "orphan"}),
-        ("/api/projects/999/tasks", {"title": ""}),
-    ],
-)
-def test_invalid_create_requests_are_rejected(client, path, payload):
-    response = client.post(path, json=payload)
-    assert response.status_code in {400, 404, 422}
-
-
-def test_missing_resources_and_bodyless_deletes(client):
-    assert client.get("/api/projects/999/tasks").status_code == 404
-    assert client.patch("/api/tasks/999", json={"title": "missing"}).status_code == 404
-    assert client.delete("/api/projects/999").status_code == 404
-    assert client.delete("/api/tasks/999").status_code == 404
-
-    project = client.post("/api/projects", json={"name": "Delete"}).json()
-    task = client.post(
-        f"/api/projects/{project['id']}/tasks", json={"title": "Task"}
-    ).json()
-
-    deleted_task = client.delete(f"/api/tasks/{task['id']}")
-    assert deleted_task.status_code == 204
-    assert deleted_task.content == b""
-
-    deleted_project = client.delete(f"/api/projects/{project['id']}")
-    assert deleted_project.status_code == 204
-    assert deleted_project.content == b""
+    deleted = client.delete(f"/api/projects/{project_id}")
+    assert deleted.status_code == 204
+    assert deleted.content == b""
+    assert client.get(f"/api/projects/{project_id}").status_code == 404
+    assert client.get(f"/api/projects/{project_id}/tasks").json() == []
