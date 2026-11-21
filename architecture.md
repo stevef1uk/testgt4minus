@@ -102,6 +102,8 @@ deletes return 204 with no body.
 
 ## Unit tests
 
+Phase-1 repository validation is owned by `taskboard/tests/test_repository.py` and must assert the SPEC boundaries, not merely exercise successful persistence. It covers a project name of 80 characters as accepted and 81 characters as rejected, a task title of 120 characters as accepted and 121 characters as rejected, and a description at the SPEC-defined maximum as accepted and an overlong description as rejected. The same suite must assert that an unknown task status and an unknown task priority are rejected with the repository validation error, while valid status and priority values persist and round-trip. These assertions are part of the phase-1-core exit gate and must remain in the active test file.
+
 taskboard/tests/test_repository.py proves idempotent schema initialization,
 empty lists, deterministic project ordering, task defaults and timestamps,
 status/priority filters including conjunction, partial updates preserving
@@ -216,6 +218,8 @@ earlier-owned files but do not create duplicates.
 ## Requirements
 
 ### phase-1-core
+
+The phase-1-core test deliverable includes explicit negative assertions in `taskboard/tests/test_repository.py` for overlong descriptions using the SPEC-defined description maximum, the project-name limit of 80, the task-title limit of 120, and unknown status/priority values; a passing test count without those assertions is insufficient.
 
 Deliver package metadata, documentation, ignore rules, package marker, schema,
 models, repository operations, and repository tests. Use idempotent DDL,
