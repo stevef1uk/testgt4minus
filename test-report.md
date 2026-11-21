@@ -1,37 +1,13 @@
-# Test Review — Tasks and Kanban UI
+# Test Review — phase-1-core
 
 ## Summary
-Partial tests pass; the configured Phase 2 pytest verification passes, but planned Phase 2 coverage is inadequate.
+Partial tests pass; phase verify passed, but the active phase requirement is not adequately covered.
 
 ## Per-requirement results
-### phase-1-core — PASS
-- Test file: `taskboard/tests/test_repository.py`
-- Verify result: passed (`31 passed`)
-- Notes: Repository tests contain substantive assertions for schema setup, validation, defaults, ordering, filtering, partial updates, timestamps, and cascade deletion.
-
-### phase-1-app — PASS
-- Test file: `taskboard/tests/test_api.py`
-- Verify result: passed (`31 passed`)
-- Notes: API tests exercise the real FastAPI/TestClient wiring and assert health, project CRUD, errors, HTML, and static assets.
-
-### phase-2 repository behavior — PASS
-- Test file: `taskboard/tests/test_repository.py`
-- Verify result: passed
-- Notes: Existing repository assertions exercise task creation/defaults, filters, partial updates, validation, ordering, and cascade behavior.
-
-### phase-2 task API behavior — FAIL
-- Test file: `taskboard/tests/test_api.py`
-- Verify result: pytest passed, but planned coverage is incomplete.
-- Notes: The plan requires composed filters, all supported PATCH fields and omitted-field preservation, null and empty PATCH rejection, malformed integer paths, missing task behavior, empty arrays, exact timestamps, and the full validation matrix. The file only partially exercises these cases; in particular it does not substantively assert all listed scenarios.
-
-### phase-2 UI behavior — FAIL
-- Test file: `taskboard/tests/test_ui_content.py`
-- Verify result: pytest passed, but planned coverage is incomplete.
-- Notes: The tests only inspect a small set of element IDs and three JavaScript substrings. They do not assert the TaskBoard heading, task form, selectors, priority controls, three Kanban headings, task controls, project selection, or visible empty/error behavior required by the plan and SPEC.
-
-### phase-3 — DEFERRED
-- Test file: `taskboard/playwright/taskboard.spec.ts`
-- Notes: Future-phase requirement; not evaluated in this Phase 2 review.
+### phase-1-core — FAIL
+- Test file: taskboard/tests/test_repository.py
+- Verify result: passed (`4 passed in 0.01s`)
+- Notes: The file contains real assertions for basic idempotent initialization, project/task creation, filtering, partial update preservation, and cascade deletion. However, it does not assert several planned and SPEC-required foundation behaviors: schema/index presence, `foreign_keys` and `busy_timeout=5000`, validation/mapping and length/Unicode rules, explicit UTC timezone offsets, persistence across separate repository connections, parameterized-write behavior, or missing project/task not-found results. The four tests also use unsupported `priority` assertions in the current SPEC contract's phase-1-core test requirements.
 
 ## Overall assessment
-The Phase 2 pytest command is green, but the planned Phase 2 API and UI tests do not cover every stated requirement. Repair the named tests and re-run the complete Phase 2 verification.
+FAIL. Repair the active repository coverage in taskboard/tests/test_repository.py under bead tm-ns3, adding substantive assertions for every planned phase-1-core scenario, then rerun the configured phase verification.
