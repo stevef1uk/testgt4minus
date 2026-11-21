@@ -36,7 +36,7 @@ Assertions:
 Requirement: Add task repository/API behavior and the user-visible project/task Kanban workflow: selection, creation, editing, deletion, todo→doing→done movement, validation, empty/error states, and safe rendering.
 Level: integration
 Test file: taskboard/tests/test_repository.py
-Bead ID: te-7yg
+Bead ID:
 Phase: phase-2
 Scenarios:
 - Create tasks through repository operations with defaults, filter them, update title/description/priority/status partially, and delete through project cascade.
@@ -59,7 +59,7 @@ Assertions:
 Requirement: Render the real TaskBoard page with project/task forms, project selection, three Kanban columns, controls, empty/error regions, and safe static client behavior.
 Level: integration
 Test file: taskboard/tests/test_ui_content.py
-Bead ID: te-w1w
+Bead ID:
 Phase: phase-2
 Scenarios:
 - Fetch the rendered page and inspect the project form, task form, selectors, priority controls, `To Do`/`Doing`/`Done` columns, and empty/loading/error regions.
