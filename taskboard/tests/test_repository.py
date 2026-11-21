@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import sqlite3
-
 import pytest
 
 from taskboard import db
@@ -26,7 +24,9 @@ def test_projects_and_tasks_have_defaults_and_ascending_ids(repositories):
     projects, tasks = repositories
     first = projects.create_project(" Alpha ")
     second = projects.create_project("Beta")
-    assert [item["id"] for item in projects.list_projects()] == [first["id"], second["id"]]
+    assert [item["id"] for item in projects.list_projects()] == [
+        first["id"], second["id"]
+    ]
     task = tasks.create_task(first["id"], "Ship it")
     assert task["title"] == "Ship it"
     assert task["status"] == "todo"
@@ -39,7 +39,9 @@ def test_task_filters_compose_and_partial_update_preserves_values(repositories):
     project = projects.create_project("Project")
     high = tasks.create_task(project["id"], "High", priority="high", status="doing")
     tasks.create_task(project["id"], "Low", priority="low", status="todo")
-    assert [item["id"] for item in tasks.list_tasks(project["id"], "doing", "high")] == [high["id"]]
+    assert [item["id"] for item in tasks.list_tasks(
+        project["id"], "doing", "high"
+    )] == [high["id"]]
     updated = tasks.update_task(high["id"], {"title": "Renamed"})
     assert updated["title"] == "Renamed"
     assert updated["priority"] == "high"
