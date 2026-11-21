@@ -25,22 +25,6 @@
     },
     {
       "stack": "python",
-      "rule": "Keep repository tests aligned with the SPEC schema; project records must not assert a description field.",
-      "source": "agent",
-      "bead_path": "taskboard/repository.py",
-      "hits": 1,
-      "updated_at": "2026-11-21T18:52:02Z"
-    },
-    {
-      "stack": "python",
-      "rule": "Avoid in test_api.py: E AssertionError: assert {'detail': 'p...ct not found'} == {'error': 'project not found'}",
-      "source": "verify_fix",
-      "bead_path": "taskboard/tests/test_api.py",
-      "hits": 1,
-      "updated_at": "2026-11-21T20:06:35Z"
-    },
-    {
-      "stack": "python",
       "rule": "Test review lesson: Repair implementation beads: tm-j2d",
       "source": "qa_rework",
       "hits": 3,
@@ -60,6 +44,21 @@
       "source": "qa_rework",
       "hits": 1,
       "updated_at": "2026-11-21T20:44:49Z"
+    },
+    {
+      "stack": "python",
+      "rule": "Validation tests must assert the API's actual Pydantic error contract while still covering exact status, body, and persistence isolation.",
+      "source": "agent",
+      "bead_path": "taskboard/tests/test_api.py",
+      "hits": 1,
+      "updated_at": "2026-11-21T21:20:53Z"
+    },
+    {
+      "stack": "python",
+      "rule": "Test review lesson: Repair implementation beads: tm-ssd",
+      "source": "qa_rework",
+      "hits": 1,
+      "updated_at": "2026-11-21T21:21:59Z"
     }
   ]
 }

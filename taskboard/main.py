@@ -24,7 +24,7 @@ class ProjectInput(BaseModel):
 class TaskInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
     title: str = Field(min_length=1, max_length=300)
-    description: str = ""
+    description: str = Field(default="", max_length=1000)
     status: str = "todo"
     priority: str = "medium"
     due_date: str | None = None
@@ -33,7 +33,7 @@ class TaskInput(BaseModel):
 class TaskUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
     title: str | None = Field(default=None, min_length=1, max_length=300)
-    description: str | None = None
+    description: str | None = Field(default=None, max_length=1000)
     status: str | None = None
     priority: str | None = None
     due_date: str | None = None

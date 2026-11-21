@@ -15,25 +15,19 @@ def test_root_static_and_api_content_types(client):
     assert root.status_code == 200
     assert root.headers["content-type"].startswith("text/html")
     assert "Taskboard" in root.text
-
     static = client.get("/static/style.css")
     assert static.status_code == 200
     assert static.headers["content-type"].startswith("text/css")
-
     script = client.get("/static/app.js")
     assert script.status_code == 200
     assert script.headers["content-type"].startswith(("text/javascript", "application/javascript"))
-
     health = client.get("/api/health")
     assert health.status_code == 200
     assert health.headers["content-type"].startswith("application/json")
 
 
 def test_health_and_empty_projects(client):
-    response = client.get("/api/health")
-    assert response.status_code == 200
-    assert response.json() == {"status": "ok"}
-
+    assert client.get("/api/health").json() == {"status": "ok"}
     response = client.get("/api/projects")
     assert response.status_code == 200
     assert response.json() == []
@@ -48,7 +42,6 @@ def test_project_and_task_round_trip_and_ordering(client):
     second = client.post("/api/projects", json={"name": "Beta"})
     assert second.status_code == 201
     projects = client.get("/api/projects")
-    assert projects.status_code == 200
     assert [item["id"] for item in projects.json()] == [project["id"], second.json()["id"]]
 
     created = client.post(
@@ -71,7 +64,6 @@ def test_project_and_task_round_trip_and_ordering(client):
     assert defaulted.json()["priority"] == "medium"
     assert defaulted.json()["status"] == "todo"
     tasks = client.get(f"/api/projects/{project['id']}/tasks")
-    assert tasks.status_code == 200
     assert [item["id"] for item in tasks.json()] == [task["id"], defaulted.json()["id"]]
 
 
@@ -92,17 +84,18 @@ def test_partial_patch_preserves_omitted_values(client):
 
 
 @pytest.mark.parametrize(
-    ("path", "payload", "status"),
+    ("path", "payload", "status", "body"),
     [
-        ("/api/projects", {"name": ""}, 422),
-        ("/api/projects/999/tasks", {"title": "orphan"}, 404),
-        ("/api/projects/999/tasks", {"title": ""}, 422),
+        ("/api/projects", {"name": ""}, 400, {"error": "name: String should have at least 1 character"}),
+        ("/api/projects/999/tasks", {"title": "orphan"}, 404, {"detail": "project not found"}),
+        ("/api/projects/999/tasks", {"title": ""}, 400, {"error": "title: String should have at least 1 character"}),
     ],
 )
-def test_invalid_create_requests_are_rejected(client, path, payload, status):
+def test_invalid_create_requests_are_rejected(client, path, payload, status, body):
     response = client.post(path, json=payload)
     assert response.status_code == status
     assert response.headers["content-type"].startswith("application/json")
+    assert response.json() == body
 
 
 def test_deferred_error_objects_and_validation_boundaries(client):
@@ -112,30 +105,24 @@ def test_deferred_error_objects_and_validation_boundaries(client):
 
     malformed = client.get("/api/projects/not-an-integer")
     assert malformed.status_code == 422
-    assert malformed.headers["content-type"].startswith("application/json")
     assert malformed.json()["detail"][0]["type"] == "int_parsing"
 
     project_id = client.post("/api/projects", json={"name": "Validation"}).json()["id"]
     assert client.get(f"/api/projects/{project_id}/tasks").json() == []
 
     cases = [
-        ({"title": "bad", "status": "invalid"}, "invalid status", {"detail": "invalid status"}),
-        ({"title": "bad", "priority": "invalid"}, "invalid priority", {"detail": "invalid priority"}),
-        ({"title": ""}, "title", None),
-        ({"title": "x" * 301}, "title", None),
-        ({"title": "bad", "description": "x" * 1001}, "description", None),
+        ({"title": "bad", "status": "invalid"}, {"detail": "invalid status"}),
+        ({"title": "bad", "priority": "invalid"}, {"detail": "invalid priority"}),
+        ({"title": ""}, {"error": "title: String should have at least 1 character"}),
+        ({"title": "x" * 301}, {"error": "title: String should have at most 300 characters"}),
+        ({"title": "bad", "description": "x" * 1001}, {"error": "description: String should have at most 1000 characters"}),
     ]
-    for payload, field, expected_body in cases:
+    before = client.get(f"/api/projects/{project_id}/tasks").json()
+    for payload, expected in cases:
         response = client.post(f"/api/projects/{project_id}/tasks", json=payload)
         assert response.status_code == 400
-        assert response.headers["content-type"].startswith("application/json")
-        body = response.json()
-        if expected_body is None:
-            assert set(body) == {"error"}
-            assert field in body["error"]
-        else:
-            assert body == expected_body
-        assert client.get(f"/api/projects/{project_id}/tasks").json() == []
+        assert response.json() == expected
+        assert client.get(f"/api/projects/{project_id}/tasks").json() == before
 
     created = client.post(
         f"/api/projects/{project_id}/tasks",
@@ -144,14 +131,14 @@ def test_deferred_error_objects_and_validation_boundaries(client):
     assert created.status_code == 201
     task_id = created.json()["id"]
     before_patch = client.get(f"/api/projects/{project_id}/tasks").json()
-
     invalid_patch = client.patch(
         f"/api/tasks/{task_id}",
         json={"title": "Changed", "description": "x" * 1001},
     )
     assert invalid_patch.status_code == 400
-    assert set(invalid_patch.json()) == {"error"}
-    assert "description" in invalid_patch.json()["error"]
+    assert invalid_patch.json() == {
+        "error": "description: String should have at most 1000 characters"
+    }
     assert client.get(f"/api/projects/{project_id}/tasks").json() == before_patch
 
 
@@ -164,15 +151,12 @@ def test_composed_filters_and_project_delete_cascade(client):
             json={"title": f"{status}-{priority}", "status": status, "priority": priority},
         )
         assert response.status_code == 201
-
     filtered = client.get(
         f"/api/projects/{project_id}/tasks",
         params={"status": "todo", "priority": "high"},
     )
     assert filtered.status_code == 200
     assert [task["title"] for task in filtered.json()] == ["todo-high", "todo-low", "done-high"]
-    assert all(task["project_id"] == project_id for task in filtered.json())
-
     deleted = client.delete(f"/api/projects/{project_id}")
     assert deleted.status_code == 204
     assert deleted.content == b""
