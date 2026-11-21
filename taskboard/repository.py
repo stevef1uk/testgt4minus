@@ -8,9 +8,9 @@ from typing import Any
 
 from . import db
 from .models import (
-    VALID_PRIORITIES,
-    VALID_STATUSES,
+    project_to_dict,
     project_from_row,
+    task_to_dict,
     task_from_row,
 )
 
@@ -20,11 +20,11 @@ def _utc_now() -> str:
 
 
 def _project(row: Any) -> dict[str, Any]:
-    return project_from_row(row)
+    return project_to_dict(project_from_row(row))
 
 
 def _task(row: Any) -> dict[str, Any]:
-    return task_from_row(row)
+    return task_to_dict(task_from_row(row))
 
 
 class ProjectRepository:
