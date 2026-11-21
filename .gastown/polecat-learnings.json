@@ -10,14 +10,6 @@
     },
     {
       "stack": "python",
-      "rule": "Avoid in conftest.py: E AssertionError: assert {'detail': 'Not Found'} == {'error': 'task not found'}",
-      "source": "verify_fix",
-      "bead_path": "taskboard/tests/conftest.py",
-      "hits": 1,
-      "updated_at": "2026-11-20T17:30:36Z"
-    },
-    {
-      "stack": "python",
       "rule": "Test review lesson: Repair implementation beads: te-j3i",
       "source": "qa_rework",
       "hits": 1,
@@ -60,6 +52,13 @@
       "bead_path": "taskboard/repository.py",
       "hits": 1,
       "updated_at": "2026-11-21T18:34:28Z"
+    },
+    {
+      "stack": "python",
+      "rule": "QA lesson: {\"summary\":\"Stage 1 (Spec compliance) FAILED: multiple spec deviations",
+      "source": "qa_rework",
+      "hits": 1,
+      "updated_at": "2026-11-21T18:39:34Z"
     }
   ]
 }
