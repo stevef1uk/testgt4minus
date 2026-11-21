@@ -80,6 +80,17 @@ def create_app(db_path: str | None = None) -> FastAPI:
     app = FastAPI(title="Taskboard")
     app.state.db_path = database
 
+    @app.exception_handler(RequestValidationError)
+    async def validation_error_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
+        errors = []
+        for error in exc.errors():
+            location = error.get("loc", ())
+            field = location[-1] if location else "request"
+            errors.append(f"{field}: {error.get('msg', 'invalid value')}")
+        if any(error.get("loc", ())[:1] == ("path",) for error in exc.errors()):
+            return JSONResponse(status_code=422, content={"detail": exc.errors()})
+        return JSONResponse(status_code=400, content={"error": "; ".join(errors)})
+
     def db() -> sqlite3.Connection:
         return _connect(app.state.db_path)
 
@@ -143,9 +154,9 @@ def create_app(db_path: str | None = None) -> FastAPI:
     @app.post("/api/projects/{project_id}/tasks", status_code=201)
     def create_task(project_id: int, payload: TaskInput) -> dict[str, Any]:
         if payload.status not in {"todo", "in_progress", "done"}:
-            raise HTTPException(status_code=422, detail="invalid status")
+            raise HTTPException(status_code=400, detail="invalid status")
         if payload.priority not in {"low", "medium", "high"}:
-            raise HTTPException(status_code=422, detail="invalid priority")
+            raise HTTPException(status_code=400, detail="invalid priority")
         with db() as connection:
             ensure_project(connection, project_id)
             cursor = connection.execute(
@@ -166,9 +177,9 @@ def create_app(db_path: str | None = None) -> FastAPI:
     def update_task(task_id: int, payload: TaskUpdate) -> dict[str, Any]:
         values = payload.model_dump(exclude_unset=True)
         if "status" in values and values["status"] not in {"todo", "in_progress", "done"}:
-            raise HTTPException(status_code=422, detail="invalid status")
+            raise HTTPException(status_code=400, detail="invalid status")
         if "priority" in values and values["priority"] not in {"low", "medium", "high"}:
-            raise HTTPException(status_code=422, detail="invalid priority")
+            raise HTTPException(status_code=400, detail="invalid priority")
         if not values:
             raise HTTPException(status_code=400, detail="no fields to update")
         values["updated_at"] = "CURRENT_TIMESTAMP"
