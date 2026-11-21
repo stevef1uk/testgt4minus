@@ -7,51 +7,24 @@ from pathlib import Path
 from typing import Any
 
 from . import db
-
-VALID_STATUSES = frozenset({"todo", "doing", "done"})
-VALID_PRIORITIES = frozenset({"low", "medium", "high"})
+from .models import (
+    VALID_PRIORITIES,
+    VALID_STATUSES,
+    project_from_row,
+    task_from_row,
+)
 
 
 def _utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def _ensure_schema(path: str | Path) -> None:
-    db.initialize(path)
-    with db.connect(path) as connection:
-        columns = {
-            row["name"]
-            for row in connection.execute("PRAGMA table_info(tasks)").fetchall()
-        }
-        if "priority" not in columns:
-            connection.execute(
-                "ALTER TABLE tasks ADD COLUMN priority TEXT NOT NULL DEFAULT 'medium'"
-            )
-        connection.execute(
-            "CREATE INDEX IF NOT EXISTS idx_tasks_project_id ON tasks(project_id)"
-        )
-
-
 def _project(row: Any) -> dict[str, Any]:
-    return {
-        "id": int(row["id"]),
-        "name": str(row["name"]),
-        "description": str(row["description"]),
-        "created_at": str(row["created_at"]),
-    }
+    return project_from_row(row)
 
 
 def _task(row: Any) -> dict[str, Any]:
-    return {
-        "id": int(row["id"]),
-        "project_id": int(row["project_id"]),
-        "title": str(row["title"]),
-        "description": str(row["description"]),
-        "status": str(row["status"]),
-        "priority": str(row["priority"]),
-        "created_at": str(row["created_at"]),
-        "updated_at": str(row["updated_at"]),
-    }
+    return task_from_row(row)
 
 
 class ProjectRepository:
@@ -62,7 +35,7 @@ class ProjectRepository:
     def list_projects(self) -> list[dict[str, Any]]:
         with db.connect(self.db_path) as connection:
             rows = connection.execute(
-                "SELECT id, name, description, created_at "
+                "SELECT id, name, created_at "
                 "FROM projects ORDER BY id ASC"
             ).fetchall()
         return [_project(row) for row in rows]
@@ -72,12 +45,11 @@ class ProjectRepository:
         now = _utc_now()
         with db.connect(self.db_path) as connection:
             cursor = connection.execute(
-                "INSERT INTO projects (name, description, created_at) "
-                "VALUES (?, ?, ?)",
-                (name, "", now),
+                "INSERT INTO projects (name, created_at) VALUES (?, ?)",
+                (name, now),
             )
             row = connection.execute(
-                "SELECT id, name, description, created_at FROM projects WHERE id = ?",
+                "SELECT id, name, created_at FROM projects WHERE id = ?",
                 (cursor.lastrowid,),
             ).fetchone()
         return _project(row)
@@ -131,15 +103,14 @@ class TaskRepository:
         with db.connect(self.db_path) as connection:
             cursor = connection.execute(
                 "INSERT INTO tasks "
-                "(project_id, title, description, status, priority, position, "
-                "created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                "(project_id, title, description, status, priority, "
+                "created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
                 (
                     project_id,
                     title.strip(),
                     description,
                     status,
                     priority,
-                    0,
                     now,
                     now,
                 ),
