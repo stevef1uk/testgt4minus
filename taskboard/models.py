@@ -36,8 +36,8 @@ def validate_project_name(name: str) -> str:
     value = str(name).strip()
     if not value:
         raise ValueError("project name is required")
-    if len(value) > 100:
-        raise ValueError("project name must be at most 100 characters")
+    if len(value) > 80:
+        raise ValueError("project name must be at most 80 characters")
     return value
 
 
