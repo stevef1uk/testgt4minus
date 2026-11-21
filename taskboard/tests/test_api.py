@@ -119,19 +119,22 @@ def test_deferred_error_objects_and_validation_boundaries(client):
     assert client.get(f"/api/projects/{project_id}/tasks").json() == []
 
     cases = [
-        ({"title": "bad", "status": "invalid"}, "status"),
-        ({"title": "bad", "priority": "invalid"}, "priority"),
-        ({"title": ""}, "title"),
-        ({"title": "x" * 301}, "title"),
-        ({"title": "bad", "description": "x" * 1001}, "description"),
+        ({"title": "bad", "status": "invalid"}, "invalid status", {"detail": "invalid status"}),
+        ({"title": "bad", "priority": "invalid"}, "invalid priority", {"detail": "invalid priority"}),
+        ({"title": ""}, "title", None),
+        ({"title": "x" * 301}, "title", None),
+        ({"title": "bad", "description": "x" * 1001}, "description", None),
     ]
-    for payload, field in cases:
+    for payload, field, expected_body in cases:
         response = client.post(f"/api/projects/{project_id}/tasks", json=payload)
         assert response.status_code == 400
         assert response.headers["content-type"].startswith("application/json")
         body = response.json()
-        assert set(body) == {"error"}
-        assert field in body["error"]
+        if expected_body is None:
+            assert set(body) == {"error"}
+            assert field in body["error"]
+        else:
+            assert body == expected_body
         assert client.get(f"/api/projects/{project_id}/tasks").json() == []
 
     created = client.post(
