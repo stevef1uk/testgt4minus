@@ -10,6 +10,21 @@ def assert_timestamp(value: str) -> None:
     datetime.fromisoformat(value)
 
 
+def test_root_static_and_api_content_types(client):
+    root = client.get("/")
+    assert root.status_code == 200
+    assert root.headers["content-type"].startswith("text/html")
+    assert "Taskboard" in root.text
+
+    static = client.get("/static/style.css")
+    assert static.status_code == 200
+    assert static.headers["content-type"].startswith("text/css")
+
+    health = client.get("/api/health")
+    assert health.status_code == 200
+    assert health.headers["content-type"].startswith("application/json")
+
+
 def test_health_and_empty_projects(client):
     response = client.get("/api/health")
     assert response.status_code == 200
