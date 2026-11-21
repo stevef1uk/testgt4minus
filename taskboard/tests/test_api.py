@@ -110,32 +110,46 @@ def test_deferred_error_objects_and_validation_boundaries(client):
     assert missing.status_code == 404
     assert missing.json() == {"detail": "project not found"}
 
-
-
     malformed = client.get("/api/projects/not-an-integer")
     assert malformed.status_code == 422
     assert malformed.headers["content-type"].startswith("application/json")
     assert malformed.json()["detail"][0]["type"] == "int_parsing"
 
     project_id = client.post("/api/projects", json={"name": "Validation"}).json()["id"]
-    cases = [
-        ({"title": "bad", "status": "invalid"}, "invalid status"),
-        ({"title": "bad", "priority": "invalid"}, "invalid priority"),
-        ({"title": ""}, "String should have at least 1 character"),
-        ({"title": "x" * 301}, "String should have at most 300 characters"),
-    ]
-    for payload, expected_detail in cases:
-        response = client.post(f"/api/projects/{project_id}/tasks", json=payload)
-        assert response.status_code == 422
-        assert response.headers["content-type"].startswith("application/json")
-        assert expected_detail in str(response.json()["detail"])
+    assert client.get(f"/api/projects/{project_id}/tasks").json() == []
 
-    preserved = client.post(
+    cases = [
+        ({"title": "bad", "status": "invalid"}, "status"),
+        ({"title": "bad", "priority": "invalid"}, "priority"),
+        ({"title": ""}, "title"),
+        ({"title": "x" * 301}, "title"),
+        ({"title": "bad", "description": "x" * 1001}, "description"),
+    ]
+    for payload, field in cases:
+        response = client.post(f"/api/projects/{project_id}/tasks", json=payload)
+        assert response.status_code == 400
+        assert response.headers["content-type"].startswith("application/json")
+        body = response.json()
+        assert set(body) == {"error"}
+        assert field in body["error"]
+        assert client.get(f"/api/projects/{project_id}/tasks").json() == []
+
+    created = client.post(
         f"/api/projects/{project_id}/tasks",
-        json={"title": "Long description", "description": "x" * 2001},
+        json={"title": "Preserved", "description": "short"},
     )
-    assert preserved.status_code == 201
-    assert preserved.json()["description"] == "x" * 2001
+    assert created.status_code == 201
+    task_id = created.json()["id"]
+    before_patch = client.get(f"/api/projects/{project_id}/tasks").json()
+
+    invalid_patch = client.patch(
+        f"/api/tasks/{task_id}",
+        json={"title": "Changed", "description": "x" * 1001},
+    )
+    assert invalid_patch.status_code == 400
+    assert set(invalid_patch.json()) == {"error"}
+    assert "description" in invalid_patch.json()["error"]
+    assert client.get(f"/api/projects/{project_id}/tasks").json() == before_patch
 
 
 def test_composed_filters_and_project_delete_cascade(client):
