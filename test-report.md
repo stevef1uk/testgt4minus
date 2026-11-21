@@ -1,44 +1,19 @@
-# Test Review — phase-1-app
+# Test Review — Phase 1
 
 ## Summary
-The repaired API test suite covers the deferred phase-1-app findings with substantive response and validation assertions; phase verify is recorded below.
+Tests execute successfully (16 passed), but phase verification is insufficient for the active requirements. The planned tests exist and contain real assertions, yet key SPEC boundary and error-contract assertions are missing or inverted.
 
 ## Per-requirement results
-### Root/static responses — PASS
+
+### phase-1-core — FAIL
+- Test file: taskboard/tests/test_repository.py
+- Verify result: passed — 16 passed, 1 warning
+- Notes: The repository suite exercises persistence, filtering, updates, cascade deletion, timestamps, and schema settings, but it does not cover the planned/SPEC-required boundaries. It tests 201-character project names and titles rather than the specified 81/121-character limits, and it has no assertions for the 80/120-character accepted boundaries, 1000/1001-character descriptions, or unknown status/priority rejection.
+
+### phase-1-app — FAIL
 - Test file: taskboard/tests/test_api.py
-- Verify result: passed (pytest phase verification)
-- Notes: Exercises the API response path and asserts the relevant contract.
-- Evidence: {"file":"taskboard/tests/test_api.py","line":15,"excerpt":'assert root.status_code == 200'}
-### Error objects and validation responses — PASS
-- Test file: taskboard/tests/test_api.py
-- Verify result: passed (pytest phase verification)
-- Notes: Exercises the API response path and asserts the relevant contract.
-- Evidence: {"file":"taskboard/tests/test_api.py","line":62,"excerpt":'assert task["description"] == "Details"'}
-### Malformed integer 422 — PASS
-- Test file: taskboard/tests/test_api.py
-- Verify result: passed (pytest phase verification)
-- Notes: Exercises the API response path and asserts the relevant contract.
-- Evidence: {"file":"taskboard/tests/test_api.py","line":97,"excerpt":'("/api/projects", {"name": ""}, 422),'}
-### Invalid status/priority and overlong title/description — PASS
-- Test file: taskboard/tests/test_api.py
-- Verify result: passed (pytest phase verification)
-- Notes: Exercises the API response path and asserts the relevant contract.
-- Evidence: {"file":"taskboard/tests/test_api.py","line":15,"excerpt":'assert root.status_code == 200'}
-### Composed filters — PASS
-- Test file: taskboard/tests/test_api.py
-- Verify result: passed (pytest phase verification)
-- Notes: Exercises the API response path and asserts the relevant contract.
-- Evidence: {"file":"taskboard/tests/test_api.py","line":155,"excerpt":'assert filtered.status_code == 200'}
-### Project-delete cascade — PASS
-- Test file: taskboard/tests/test_api.py
-- Verify result: passed (pytest phase verification)
-- Notes: Exercises the API response path and asserts the relevant contract.
-- Evidence: {"file":"taskboard/tests/test_api.py","line":141,"excerpt":'def test_composed_filters_and_project_delete_cascade(client):'}
-### Content types and runtime database isolation — PASS
-- Test file: taskboard/tests/test_api.py
-- Verify result: passed (pytest phase verification)
-- Notes: Exercises the API response path and asserts the relevant contract.
-- Evidence: {"file":"taskboard/tests/test_api.py","line":16,"excerpt":'assert root.headers["content-type"].startswith("text/html")'}
+- Verify result: passed — 16 passed, 1 warning
+- Notes: The API suite has substantive route assertions, but its validation/error coverage conflicts with the SPEC. It expects a 200/201 response for a 2001-character description instead of asserting rejection at 1001 characters, and it asserts `{"detail": ...}` for a documented application error that must be `{"error": ...}`. The suite therefore cannot establish the required API contract or invalid-write non-persistence.
 
 ## Overall assessment
-The repaired test_api.py is substantive and covers the deferred API findings. The configured phase verification passed; no test repair is required for this file.
+FAIL. Reopen tm-ns3 for Test repair: taskboard/tests/test_repository.py — add exact 80/81 project-name, 120/121 task-title, 1000/1001 description, and invalid status/priority assertions, including valid boundary persistence. Reopen tm-ssd for Implementation repair: taskboard/tests/test_api.py — correct the API validation/error assertions and implementation behavior so overlong descriptions return the documented 400 `{"error": ...}` object and invalid writes are absent from subsequent reads. Re-run the exact phase gate afterward.
