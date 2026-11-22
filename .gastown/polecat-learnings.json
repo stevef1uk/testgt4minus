@@ -32,13 +32,6 @@
     },
     {
       "stack": "python",
-      "rule": "Test review lesson: Repair implementation beads: tm-rmz",
-      "source": "qa_rework",
-      "hits": 2,
-      "updated_at": "2026-11-22T16:35:38Z"
-    },
-    {
-      "stack": "python",
       "rule": "QA lesson: {\"summary\":\"Stage 1 failed: active-phase API contract/wiring defect",
       "source": "qa_rework",
       "hits": 1,
@@ -58,6 +51,13 @@
       "bead_path": "taskboard/main.py",
       "hits": 1,
       "updated_at": "2026-11-22T17:22:08Z"
+    },
+    {
+      "stack": "python",
+      "rule": "Test review lesson: Repair implementation beads: tm-rmz",
+      "source": "qa_rework",
+      "hits": 3,
+      "updated_at": "2026-11-22T18:11:32Z"
     }
   ]
 }
