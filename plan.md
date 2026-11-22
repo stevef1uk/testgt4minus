@@ -1,57 +1,61 @@
 # Phase 3 implementation plan
 
-Phase 3 owns exactly the four active required files for filters, browser
-scenarios, and the release check. Existing Python application, templates,
-static assets, and pytest files are consumed dependencies from earlier phases;
-do not create duplicate paths or reopen them in this phase.
+Phase 3 owns exactly four required files: the Playwright manifest and
+lockfile, the canonical host configuration, and the canonical browser
+scenarios. Earlier-phase Python, template, static, and pytest files are
+consumed dependencies, not new work in this phase. Preserve the validated
+content for the four active files and do not create duplicate harness paths.
 
 ## Verification contract
 
-Run this command verbatim from the rig working directory:
+The polecat must run this exact command from the town root:
 `cd taskboard && python -m pytest -q tests && ./node_modules/.bin/playwright test --config playwright.config.ts playwright`
-The Playwright verb is the literal `test`; it must remain unprefixed. The
-command must load `taskboard/playwright.config.ts`, use the existing local
-application at `http://127.0.0.1:8080`, pass the complete pytest suite, and
-pass all three Chromium scenarios. Dependency setup occurs before review; the
-verification command itself must not alter dependencies or start a second
-application container.
+The application is already available at `http://127.0.0.1:8080`. The command
+must exercise the complete pytest suite and the Chromium browser scenarios
+against that existing server. Dependency preparation happens before review;
+the verification command itself only runs the specified test tools.
 
 ## Bead map
 
 ### tm-5d8: taskboard/package.json
-- Scope: Supply the canonical Playwright package manifest with the validated `@playwright/test` development dependency and Chromium test script.
-- Architecture: `architecture.md` Planned file layout, Module / bead ownership, and phase-3 delivery mapping.
-- Interfaces: npm metadata, the `test` script, and the `@playwright/test` package consumed by the Playwright CLI and spec.
-- Depends on: <none>
-- Consumed by: taskboard/package-lock.json; taskboard/playwright.config.ts; taskboard/playwright/taskboard.spec.ts
-- Acceptance: Valid JSON declares `@playwright/test` version 1.62.1 under development dependencies; the script invokes `npx playwright test --project=chromium`; no application build or runtime dependency is added.
+- Scope: Provide the canonical browser-test manifest named `playwright-tests`, version `1.0.0`, with the `test` script `npx playwright test --project=chromium` and `@playwright/test` version `1.62.1` under `devDependencies`.
+- Architecture: `architecture.md` Planned file layout, Module / bead ownership, and `phase-3` delivery mapping.
+- Interfaces: npm `test` script and the pinned Playwright development dependency consumed by the CLI and browser specification.
+- Depends on: `<none>`
+- Consumed by: taskboard/package-lock.json (tm-ddc), taskboard/playwright.config.ts (tm-p96), taskboard/playwright/taskboard.spec.ts (tm-ebm)
+- Acceptance: The file is valid JSON; its script and exact dependency version match SPEC; it adds no runtime dependency, frontend build, alternate config, or container.
+- Verify: `cd taskboard && python -m pytest -q tests && ./node_modules/.bin/playwright test --config playwright.config.ts playwright`
 
 ### tm-ddc: taskboard/package-lock.json
-- Scope: Supply the committed lockfile matching the phase-3 package manifest.
-- Architecture: `architecture.md` Planned file layout and phase-3 delivery mapping.
-- Interfaces: Lockfile metadata used to resolve the Playwright package and `taskboard/node_modules/.bin/playwright`.
+- Scope: Preserve the validated lockfile corresponding to taskboard/package.json and its reproducible Playwright dependency graph.
+- Architecture: `architecture.md` Planned file layout and `phase-3` delivery mapping.
+- Interfaces: Lockfile package metadata consumed by the project dependency resolver and the canonical Playwright executable.
 - Depends on: taskboard/package.json (tm-5d8)
-- Consumed by: taskboard/playwright/taskboard.spec.ts and the canonical verification command
-- Acceptance: Present, nonempty, valid lockfile JSON whose root package metadata and Playwright version match `taskboard/package.json`; it adds no second application or container.
+- Consumed by: taskboard/playwright.config.ts (tm-p96), taskboard/playwright/taskboard.spec.ts (tm-ebm), release verification
+- Acceptance: The lockfile is valid, nonempty, and consistent with package.json; its root metadata and Playwright version match exactly; no unrelated application dependency or second harness is introduced.
+- Verify: `cd taskboard && python -m pytest -q tests && ./node_modules/.bin/playwright test --config playwright.config.ts playwright`
 
 ### tm-p96: taskboard/playwright.config.ts
-- Scope: Configure the canonical host-server Playwright run.
-- Architecture: `architecture.md` Module / bead ownership and E2E / integration testing; preserve the validated config's default export, browser project, base URL, timeout, reporters, retries, and tracing.
-- Interfaces: Default-exported Playwright configuration consumed by the CLI and `taskboard/playwright/taskboard.spec.ts`; base URL defaults to `http://127.0.0.1:8080` and may be overridden by `BASE_URL`.
-- Depends on: taskboard/package.json (tm-5d8); taskboard/package-lock.json (tm-ddc)
-- Consumed by: taskboard/playwright/taskboard.spec.ts and the canonical verification command
-- Acceptance: The exact command discovers the canonical `playwright` spec directory, runs only the configured Chromium project, honors the host base URL, and retains the specified 10-second timeout, CI worker behavior, reporters, first-retry tracing, and certificate/HTTPS launch arguments. It must not start another server, rewrite the CLI verb, or add aliases.
+- Scope: Provide the validated Playwright configuration with `./e2e` test directory, 10000ms timeout, CI forbid-only/retry/worker behavior, HTML and list reporters, first-retry tracing, BASE_URL override with default `http://127.0.0.1:8080`, and the Chromium Desktop Chrome project.
+- Architecture: `architecture.md` Module / bead ownership and E2E / integration testing; retain the validated `defineConfig` default export and launch arguments.
+- Interfaces: Default export consumed by the Playwright CLI and spec; `baseURL` reads `BASE_URL`; project name is `chromium`; the required command loads this config.
+- Depends on: taskboard/package.json (tm-5d8), taskboard/package-lock.json (tm-ddc)
+- Consumed by: taskboard/playwright/taskboard.spec.ts (tm-ebm), release verification
+- Acceptance: Chromium is the only configured project; CI uses one worker and forbids focused tests; reporters do not auto-open; tracing is on first retry; the required HTTPS-upgrade disabling and certificate-ignore arguments remain present; no server startup or path alias is added.
+- Verify: `cd taskboard && python -m pytest -q tests && ./node_modules/.bin/playwright test --config playwright.config.ts playwright`
 
 ### tm-ebm: taskboard/playwright/taskboard.spec.ts
-- Scope: Implement independent browser acceptance scenarios against the real TaskBoard UI and clean up data created by each scenario.
-- Architecture: `architecture.md` E2E / integration testing and phase-3 requirements; browser interactions belong in this file while application behavior remains in `taskboard/static/app.js`.
-- Interfaces: Playwright tests loaded from the configured `playwright` directory; uses the configured base URL, project/task API cleanup, visible forms, Kanban columns, cards, and filter controls.
-- Depends on: taskboard/package.json (tm-5d8); taskboard/package-lock.json (tm-ddc); taskboard/playwright.config.ts (tm-p96); taskboard/main.py; taskboard/templates/index.html; taskboard/static/app.js; taskboard/static/style.css
+- Scope: Provide three independent browser acceptance scenarios against the real TaskBoard UI, using unique project data and cleanup through the application API or UI.
+- Architecture: `architecture.md` E2E / integration testing and phase-3 requirements; browser interactions belong here while behavior remains in taskboard/static/app.js.
+- Interfaces: Playwright tests loaded from the configured `playwright` directory; use the configured base URL, visible forms, Kanban columns, task cards, filters, and project/task cleanup endpoints.
+- Depends on: taskboard/package.json (tm-5d8), taskboard/package-lock.json (tm-ddc), taskboard/playwright.config.ts (tm-p96), taskboard/main.py, taskboard/templates/index.html, taskboard/static/app.js, taskboard/static/style.css
 - Consumed by: the canonical phase-3 verification command
-- Acceptance: (1) first load asserts the real `TaskBoard` heading and `To Do`, `Doing`, and `Done` columns; (2) an isolated unique project flow creates a task, asserts it in To Do, moves it to Doing and Done, deletes it, and asserts disappearance; (3) an isolated unique project flow creates low- and high-priority tasks, filters to high and asserts only the high task, resets to all and asserts both. Use real task text and controls, clean up created projects before/after scenarios without masking failures, and do not depend on test order or pre-existing projects.
+- Acceptance: First load asserts `TaskBoard` plus `To Do`, `Doing`, and `Done`. A unique project flow creates a task, proves To Do, moves it to Doing and Done, deletes it, and proves disappearance. A separate unique project flow creates low/high tasks, filters to high and proves only high is visible, then resets and proves both return. Assertions inspect real text and controls; scenarios do not depend on order or pre-existing data; cleanup cannot hide assertion failures.
+- Verify: `cd taskboard && python -m pytest -q tests && ./node_modules/.bin/playwright test --config playwright.config.ts playwright`
 
 ## Phase boundary
 
-Earlier-phase test files remain part of the pytest verification but are not
-beads in this phase. No extra routes, wrapper scripts, duplicate configs/specs,
-frontend build, container, or out-of-scope dependency is allowed.
+Only the four mapped paths are active. Do not add routes, persistence code,
+frontend build tooling, alternate configs/specs, containers, or completed-phase
+test files. The release gate must prove both the existing pytest behavior and
+the SPEC browser requirements.
