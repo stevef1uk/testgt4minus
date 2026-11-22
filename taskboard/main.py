@@ -17,26 +17,24 @@ BASE_DIR = Path(__file__).resolve().parent
 
 
 class ProjectInput(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-    name: str = Field(min_length=1, max_length=200)
+    model_config = ConfigDict(extra="ignore")
+    name: str = Field(min_length=1, max_length=80)
 
 
 class TaskInput(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-    title: str = Field(min_length=1, max_length=300)
+    model_config = ConfigDict(extra="ignore")
+    title: str = Field(min_length=1, max_length=120)
     description: str = Field(default="", max_length=1000)
     status: str = "todo"
     priority: str = "medium"
-    due_date: str | None = None
 
 
 class TaskUpdate(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-    title: str | None = Field(default=None, min_length=1, max_length=300)
+    model_config = ConfigDict(extra="ignore")
+    title: str | None = Field(default=None, min_length=1, max_length=120)
     description: str | None = Field(default=None, max_length=1000)
     status: str | None = None
     priority: str | None = None
-    due_date: str | None = None
 
 
 def _connect(path: str) -> sqlite3.Connection:
@@ -47,7 +45,7 @@ def _connect(path: str) -> sqlite3.Connection:
         """
         CREATE TABLE IF NOT EXISTS projects (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL UNIQUE,
+            name TEXT NOT NULL,
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
         );
         CREATE TABLE IF NOT EXISTS tasks (
