@@ -223,6 +223,8 @@ Minimum three scenarios, in `taskboard/playwright/taskboard.spec.ts`:
 
 Playwright scenarios must use unique project names and must not rely on previous test runs or test order. If the project runs against a persistent local server, test setup must delete the projects it creates before and after each scenario (using the API or UI). Assertions must inspect real task content, not just HTTP 200 or visibility of a placeholder element.
 
+**Browser interaction rule**: At least one mandatory E2E test must drive a real user action in the browser — click a button, submit a form, select an option, or type into an input — and assert the resulting DOM state or API state change (for example: create project, create task, click `Move forward`, then verify the task appears in `Doing`; filter to `high`, then verify other tasks are absent). A static page loaded with `page.goto` plus heading/content assertions alone does **not** satisfy this SPEC. QA must reject `all_passed` when this interaction-and-state-change evidence is missing.
+
 ## 8. Delivery phases and dependencies
 
 Implement the following three feature phases in order. The Foundation and
@@ -332,7 +334,7 @@ This repository is an external test rig for the Gas Town `rig-flow` workflow, no
 - Tester `test_plan`: write `TEST_PLAN.md`, mapping each active-phase acceptance requirement to concrete pytest and, where applicable, Playwright tests and bead IDs.
 - Polecat: implement and commit the actual code and tests; never mark a feature done without a runnable assertion.
 - Tester `test_review`: run the active-phase verify command and confirm the planned tests exist with substantive assertions.
-- QA: smoke-test real API behavior and rendered browser content and report failures with the relevant file and bead ID.
+- QA: smoke-test real API behavior and rendered browser content, including a real control interaction plus DOM/API state-change assertion, and report failures with the relevant file and bead ID.
 - When `layout_root` is a subdirectory such as `taskboard`, paths in the
   architecture's machine-readable `delivery_phases` ownership and
   `file_dependencies` mappings must include that prefix (for example,
@@ -365,8 +367,8 @@ architecture to match a conflicting profile.
 4. GET `/` renders real UI, not a placeholder; static assets are accessible.
 5. Users can create/delete projects and create/edit/move/filter/delete tasks from the UI.
 6. Data persists across server restarts; deleting a project deletes its tasks.
-7. Browser E2E tests at `taskboard/playwright/` pass against the running app; no E2E test depends on order or pre-existing projects.
-8. The orchestrated workflow reports completion only after phase tests and final QA pass.
+7. Browser E2E tests at `taskboard/playwright/` pass against the running app; no E2E test depends on order or pre-existing projects. At least one test clicks/submits/types into a real control and asserts the resulting DOM/API state change; static page-load/content assertions alone are insufficient.
+8. The orchestrated workflow reports completion only after phase tests and final QA pass, including browser interaction evidence.
 
 ## 11. Explicitly out of scope
 
