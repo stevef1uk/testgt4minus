@@ -26,13 +26,13 @@ Bead ID: tm-rmz
 Phase: phase-1-app
 Scenarios:
 - Exercise the health endpoint and verify project create, list, and delete behavior using the temporary-database fixture; do not require unsupported project retrieve or update routes.
-- Fetch the root page and both static asset routes, including successful responses and their documented HTML, JavaScript, and CSS content types.
+- Fetch the root page and both static asset routes, including successful responses and their documented HTML, JavaScript, and CSS content types; verify the root is a real basic TaskBoard page with its heading, project creation controls, and empty-state container.
 - Check project response shapes, empty project-list behavior, missing-project delete errors, and malformed integer project paths where applicable.
 - Verify valid project writes round-trip, invalid project requests do not persist changes, and the runtime database is not touched.
 Assertions:
 - Health returns status 200 with decoded JSON {"status": "ok"}; project responses and lists have the documented keys, types, and values.
 - Project CRUD uses the specified success and error statuses and {"error": ...} objects; malformed integer paths retain 422.
-- The root and static routes return successful responses with the specified content types and nonempty bodies, and temporary data is isolated from taskboard.db.
+- The root and static routes return successful responses with the specified content types and nonempty bodies; the root HTML contains the “TaskBoard” heading, project creation form controls, and empty-state container, and temporary data is isolated from taskboard.db.
 
 ### phase-2
 Requirement: The delivered TaskBoard page provides the specified project/task forms, project selection, task editing/deletion, three Kanban columns, move-forward behavior, empty/error states, and safe visible rendering.
