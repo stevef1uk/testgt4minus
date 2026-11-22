@@ -49,8 +49,15 @@ def test_project_and_task_round_trip_and_ordering(client):
     assert_timestamp(project["created_at"])
     second = client.post("/api/projects", json={"name": "Beta"})
     assert second.status_code == 201
+    # SPEC §4: project names need not be unique.
+    duplicate = client.post("/api/projects", json={"name": "Alpha"})
+    assert duplicate.status_code == 201
     projects = client.get("/api/projects")
-    assert [item["id"] for item in projects.json()] == [project["id"], second.json()["id"]]
+    assert [item["id"] for item in projects.json()] == [
+        project["id"],
+        second.json()["id"],
+        duplicate.json()["id"],
+    ]
 
     created = client.post(
         f"/api/projects/{project['id']}/tasks",
@@ -95,7 +102,7 @@ def test_partial_patch_preserves_omitted_values(client):
     ("path", "payload", "status", "body"),
     [
         ("/api/projects", {"name": ""}, 400, {"error": "name: String should have at least 1 character"}),
-        ("/api/projects/999/tasks", {"title": "orphan"}, 404, {"detail": "project not found"}),
+        ("/api/projects/999/tasks", {"title": "orphan"}, 404, {"error": "project not found"}),
         ("/api/projects/999/tasks", {"title": ""}, 400, {"error": "title: String should have at least 1 character"}),
     ],
 )
@@ -107,11 +114,9 @@ def test_invalid_create_requests_are_rejected(client, path, payload, status, bod
 
 
 def test_deferred_error_objects_and_validation_boundaries(client):
-    missing = client.get("/api/projects/999")
-    assert missing.status_code == 404
-    assert missing.json() == {"detail": "project not found"}
-
-    malformed = client.get("/api/projects/not-an-integer")
+    # SPEC §5 route table: no GET /api/projects/{project_id} in this phase,
+    # so malformed path ints are probed on a route that exists.
+    malformed = client.post("/api/projects/not-an-integer/tasks", json={"title": "x"})
     assert malformed.status_code == 422
     assert malformed.json()["detail"][0]["type"] == "int_parsing"
 
@@ -119,8 +124,8 @@ def test_deferred_error_objects_and_validation_boundaries(client):
     assert client.get(f"/api/projects/{project_id}/tasks").json() == []
 
     cases = [
-        ({"title": "bad", "status": "invalid"}, {"detail": "invalid status"}),
-        ({"title": "bad", "priority": "invalid"}, {"detail": "invalid priority"}),
+        ({"title": "bad", "status": "invalid"}, {"error": "invalid status"}),
+        ({"title": "bad", "priority": "invalid"}, {"error": "invalid priority"}),
         ({"title": ""}, {"error": "title: String should have at least 1 character"}),
         ({"title": "x" * 301}, {"error": "title: String should have at most 120 characters"}),
         ({"title": "bad", "description": "x" * 1001}, {"error": "description: String should have at most 1000 characters"}),
@@ -168,7 +173,8 @@ def test_composed_filters_and_project_delete_cascade(client):
     deleted = client.delete(f"/api/projects/{project_id}")
     assert deleted.status_code == 204
     assert deleted.content == b""
-    assert client.get(f"/api/projects/{project_id}").status_code == 404
+    listed = client.get("/api/projects").json()
+    assert all(item["id"] != project_id for item in listed)
     remaining = client.get(f"/api/projects/{project_id}/tasks")
     assert remaining.status_code == 404
-    assert remaining.json() == {"detail": "project not found"}
+    assert remaining.json() == {"error": "project not found"}

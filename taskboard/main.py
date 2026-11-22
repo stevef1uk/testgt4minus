@@ -55,7 +55,6 @@ def _connect(path: str) -> sqlite3.Connection:
             description TEXT NOT NULL DEFAULT '',
             status TEXT NOT NULL DEFAULT 'todo',
             priority TEXT NOT NULL DEFAULT 'medium',
-            due_date TEXT,
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
         );
@@ -89,6 +88,11 @@ def create_app(db_path: str | None = None) -> FastAPI:
             return JSONResponse(status_code=422, content={"detail": exc.errors()})
         return JSONResponse(status_code=400, content={"error": "; ".join(errors)})
 
+    @app.exception_handler(HTTPException)
+    async def http_error_handler(request: Request, exc: HTTPException) -> JSONResponse:
+        # SPEC §5: application-level 400/404 errors render {"error": ...}.
+        return JSONResponse(status_code=exc.status_code, content={"error": str(exc.detail)})
+
     def db() -> sqlite3.Connection:
         return _connect(app.state.db_path)
 
@@ -105,27 +109,15 @@ def create_app(db_path: str | None = None) -> FastAPI:
 
     @app.post("/api/projects", status_code=201)
     def create_project(payload: ProjectInput) -> dict[str, Any]:
-        try:
-            with db() as connection:
-                cursor = connection.execute(
-                    "INSERT INTO projects (name) VALUES (?)", (payload.name.strip(),)
-                )
-                item = connection.execute(
-                    "SELECT id, name, created_at FROM projects WHERE id = ?",
-                    (cursor.lastrowid,),
-                ).fetchone()
-                return _row(item)
-        except sqlite3.IntegrityError as exc:
-            raise HTTPException(status_code=409, detail="project already exists") from exc
-
-    @app.get("/api/projects/{project_id}")
-    def get_project(project_id: int) -> dict[str, Any]:
+        # SPEC §4: project names need not be unique — no duplicate-name rejection.
         with db() as connection:
+            cursor = connection.execute(
+                "INSERT INTO projects (name) VALUES (?)", (payload.name.strip(),)
+            )
             item = connection.execute(
-                "SELECT id, name, created_at FROM projects WHERE id = ?", (project_id,)
+                "SELECT id, name, created_at FROM projects WHERE id = ?",
+                (cursor.lastrowid,),
             ).fetchone()
-            if item is None:
-                raise HTTPException(status_code=404, detail="project not found")
             return _row(item)
 
     @app.delete("/api/projects/{project_id}", status_code=204)
@@ -144,7 +136,7 @@ def create_app(db_path: str | None = None) -> FastAPI:
         with db() as connection:
             ensure_project(connection, project_id)
             return [_row(item) for item in connection.execute(
-                """SELECT id, project_id, title, description, status, priority, due_date,
+                """SELECT id, project_id, title, description, status, priority,
                           created_at, updated_at
                    FROM tasks WHERE project_id = ? AND (? IS NULL OR status = ?) AND (? IS NULL OR priority = ?) ORDER BY id""", (project_id, status, status, priority, priority)
             ).fetchall()]
@@ -159,13 +151,13 @@ def create_app(db_path: str | None = None) -> FastAPI:
             ensure_project(connection, project_id)
             cursor = connection.execute(
                 """INSERT INTO tasks
-                   (project_id, title, description, status, priority, due_date)
-                   VALUES (?, ?, ?, ?, ?, ?)""",
+                   (project_id, title, description, status, priority)
+                   VALUES (?, ?, ?, ?, ?)""",
                 (project_id, payload.title.strip(), payload.description,
-                 payload.status, payload.priority, None),
+                 payload.status, payload.priority),
             )
             item = connection.execute(
-                """SELECT id, project_id, title, description, status, priority, due_date,
+                """SELECT id, project_id, title, description, status, priority,
                           created_at, updated_at FROM tasks WHERE id = ?""",
                 (cursor.lastrowid,),
             ).fetchone()
@@ -192,7 +184,7 @@ def create_app(db_path: str | None = None) -> FastAPI:
             if cursor.rowcount == 0:
                 raise HTTPException(status_code=404, detail="task not found")
             return _row(connection.execute(
-                """SELECT id, project_id, title, description, status, priority, due_date,
+                """SELECT id, project_id, title, description, status, priority,
                           created_at, updated_at FROM tasks WHERE id = ?""", (task_id,)
             ).fetchone())
 
