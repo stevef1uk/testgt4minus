@@ -153,7 +153,7 @@ def create_app(db_path: str | None = None) -> FastAPI:
 
     @app.post("/api/projects/{project_id}/tasks", status_code=201)
     def create_task(project_id: int, payload: TaskInput) -> dict[str, Any]:
-        if payload.status not in {"todo", "in_progress", "done"}:
+        if payload.status not in {"todo", "doing", "done"}:
             raise HTTPException(status_code=400, detail="invalid status")
         if payload.priority not in {"low", "medium", "high"}:
             raise HTTPException(status_code=400, detail="invalid priority")
@@ -176,7 +176,7 @@ def create_app(db_path: str | None = None) -> FastAPI:
     @app.patch("/api/tasks/{task_id}")
     def update_task(task_id: int, payload: TaskUpdate) -> dict[str, Any]:
         values = payload.model_dump(exclude_unset=True)
-        if "status" in values and values["status"] not in {"todo", "in_progress", "done"}:
+        if "status" in values and values["status"] not in {"todo", "doing", "done"}:
             raise HTTPException(status_code=400, detail="invalid status")
         if "priority" in values and values["priority"] not in {"low", "medium", "high"}:
             raise HTTPException(status_code=400, detail="invalid priority")
