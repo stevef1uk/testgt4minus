@@ -164,7 +164,7 @@ def test_composed_filters_and_project_delete_cascade(client):
         params={"status": "todo", "priority": "high"},
     )
     assert filtered.status_code == 200
-    assert [task["title"] for task in filtered.json()] == ["todo-high", "todo-low", "done-high"]
+    assert [task["title"] for task in filtered.json()] == ["todo-high"]
     deleted = client.delete(f"/api/projects/{project_id}")
     assert deleted.status_code == 204
     assert deleted.content == b""
