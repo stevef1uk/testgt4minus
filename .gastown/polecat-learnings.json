@@ -32,14 +32,6 @@
     },
     {
       "stack": "python",
-      "rule": "Avoid in test_api.py: E AssertionError: assert {'detail': 'p...ct not found'} == {'error': 'project not found'}",
-      "source": "verify_fix",
-      "bead_path": "taskboard/tests/test_api.py",
-      "hits": 1,
-      "updated_at": "2026-11-22T16:23:11Z"
-    },
-    {
-      "stack": "python",
       "rule": "Test review lesson: Repair implementation beads: tm-rmz",
       "source": "qa_rework",
       "hits": 2,
@@ -58,6 +50,14 @@
       "source": "qa_rework",
       "hits": 1,
       "updated_at": "2026-11-22T17:13:14Z"
+    },
+    {
+      "stack": "python",
+      "rule": "Test review lesson: Repair implementation beads: tm-yo8",
+      "source": "qa_rework",
+      "bead_path": "taskboard/main.py",
+      "hits": 1,
+      "updated_at": "2026-11-22T17:22:08Z"
     }
   ]
 }

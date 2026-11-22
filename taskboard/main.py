@@ -10,7 +10,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -19,11 +19,19 @@ BASE_DIR = Path(__file__).resolve().parent
 class ProjectInput(BaseModel):
     model_config = ConfigDict(extra="ignore")
     name: str = Field(min_length=1, max_length=80)
+    @field_validator("name", mode="before")
+    @classmethod
+    def _strip_name(cls, value: object) -> object:
+        return value.strip() if isinstance(value, str) else value
 
 
 class TaskInput(BaseModel):
     model_config = ConfigDict(extra="ignore")
     title: str = Field(min_length=1, max_length=120)
+    @field_validator("title", mode="before")
+    @classmethod
+    def _strip_title(cls, value: object) -> object:
+        return value.strip() if isinstance(value, str) else value
     description: str = Field(default="", max_length=1000)
     status: str = "todo"
     priority: str = "medium"
@@ -32,6 +40,10 @@ class TaskInput(BaseModel):
 class TaskUpdate(BaseModel):
     model_config = ConfigDict(extra="ignore")
     title: str | None = Field(default=None, min_length=1, max_length=120)
+    @field_validator("title", mode="before")
+    @classmethod
+    def _strip_update_title(cls, value: object) -> object:
+        return value.strip() if isinstance(value, str) else value
     description: str | None = Field(default=None, max_length=1000)
     status: str | None = None
     priority: str | None = None
@@ -46,7 +58,7 @@ def _connect(path: str) -> sqlite3.Connection:
         CREATE TABLE IF NOT EXISTS projects (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
-            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%f','now') || '+00:00')
         );
         CREATE TABLE IF NOT EXISTS tasks (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -55,8 +67,8 @@ def _connect(path: str) -> sqlite3.Connection:
             description TEXT NOT NULL DEFAULT '',
             status TEXT NOT NULL DEFAULT 'todo',
             priority TEXT NOT NULL DEFAULT 'medium',
-            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%f','now') || '+00:00'),
+            updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%f','now') || '+00:00')
         );
         """
     )
@@ -112,7 +124,7 @@ def create_app(db_path: str | None = None) -> FastAPI:
         # SPEC §4: project names need not be unique — no duplicate-name rejection.
         with db() as connection:
             cursor = connection.execute(
-                "INSERT INTO projects (name) VALUES (?)", (payload.name.strip(),)
+                "INSERT INTO projects (name) VALUES (?)", (payload.name,)
             )
             item = connection.execute(
                 "SELECT id, name, created_at FROM projects WHERE id = ?",
@@ -153,7 +165,7 @@ def create_app(db_path: str | None = None) -> FastAPI:
                 """INSERT INTO tasks
                    (project_id, title, description, status, priority)
                    VALUES (?, ?, ?, ?, ?)""",
-                (project_id, payload.title.strip(), payload.description,
+                (project_id, payload.title, payload.description,
                  payload.status, payload.priority),
             )
             item = connection.execute(
@@ -172,7 +184,7 @@ def create_app(db_path: str | None = None) -> FastAPI:
             raise HTTPException(status_code=400, detail="invalid priority")
         if not values:
             raise HTTPException(status_code=400, detail="no fields to update")
-        values["updated_at"] = "CURRENT_TIMESTAMP"
+        values["updated_at"] = "(strftime('%Y-%m-%dT%H:%M:%f','now') || '+00:00')"
         assignments = ", ".join(
             f"{key} = {value}" if key == "updated_at" else f"{key} = ?" for key, value in values.items()
         )
