@@ -5,6 +5,14 @@ from datetime import datetime
 import pytest
 
 
+def assert_error_response(response, expected_status: int = 400) -> None:
+    assert response.status_code == expected_status
+    payload = response.json()
+    assert set(payload) == {"error"}
+    assert isinstance(payload["error"], str)
+    assert payload["error"]
+
+
 def assert_timestamp(value: str) -> None:
     assert isinstance(value, str)
     datetime.fromisoformat(value)
