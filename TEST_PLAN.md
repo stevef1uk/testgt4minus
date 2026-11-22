@@ -19,15 +19,15 @@ Assertions:
 - Combined filters are an AND query, updates cannot reassign projects, and cascade deletion removes all child tasks.
 
 ### phase-1-app
-Requirement: The FastAPI app exposes the specified health, project, root, and static routes with contract statuses, decoded JSON shapes, error objects, content types, and isolated temporary-database state.
+Requirement: The FastAPI app exposes the specified health, project collection/create/delete, health, root, and static routes with contract statuses, decoded JSON shapes, error objects, content types, and isolated temporary-database state.
 Level: integration
 Test file: taskboard/tests/test_api.py
 Bead ID: tm-rmz
 Phase: phase-1-app
 Scenarios:
-- Exercise the health endpoint and verify project create, list, retrieve, update, and delete behavior using the temporary-database fixture.
+- Exercise the health endpoint and verify project create, list, and delete behavior using the temporary-database fixture; do not require unsupported project retrieve or update routes.
 - Fetch the root page and both static asset routes, including successful responses and their documented HTML, JavaScript, and CSS content types.
-- Check project response shapes, empty project-list behavior, missing-project errors, and malformed integer project paths.
+- Check project response shapes, empty project-list behavior, missing-project delete errors, and malformed integer project paths where applicable.
 - Verify valid project writes round-trip, invalid project requests do not persist changes, and the runtime database is not touched.
 Assertions:
 - Health returns status 200 with decoded JSON {"status": "ok"}; project responses and lists have the documented keys, types, and values.
