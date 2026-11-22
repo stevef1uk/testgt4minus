@@ -1,33 +1,28 @@
-# Test Review — phase-1-app / phase-1-core
+# Test Review — phase-3
 
 ## Summary
-All repaired API tests are present and substantive; phase verify passed.
+Pytest passed, but the configured Playwright verification failed with “No tests found” because the canonical test is under `playwright/` while the config test directory is `e2e/`.
 
 ## Per-requirement results
-### root project form controls and empty-state container — PASS
+### phase-1-core — PASS
+- Test file: taskboard/tests/test_repository.py
+- Verify result: pytest passed
+- Notes: Repository assertions cover schema idempotence, validation boundaries, defaults, timestamps, ordering, filters, partial updates, and cascade deletion.
+
+### phase-1-app — PASS
 - Test file: taskboard/tests/test_api.py
-- Verify result: passed
-- Notes: The test drives the API/client and makes concrete assertions for this scenario.
-- Evidence: {"file":"taskboard/tests/test_api.py","line":125,"excerpt":"assert malformed.status_code == 422"}
-- Evidence: {"file":"taskboard/tests/test_api.py","line":126,"excerpt":"assert malformed.json()[\"detail\"][0][\"type\"] == \"int_parsing\""}
-### missing-project DELETE 404 error object — PASS
-- Test file: taskboard/tests/test_api.py
-- Verify result: passed
-- Notes: The test drives the API/client and makes concrete assertions for this scenario.
-- Evidence: {"file":"taskboard/tests/test_api.py","line":171,"excerpt":"assert response.status_code == 201"}
-- Evidence: {"file":"taskboard/tests/test_api.py","line":176,"excerpt":"assert filtered.status_code == 200"}
-### whitespace-only project-name rejection — PASS
-- Test file: taskboard/tests/test_api.py
-- Verify result: passed
-- Notes: The test drives the API/client and makes concrete assertions for this scenario.
-- Evidence: {"file":"taskboard/tests/test_api.py","line":171,"excerpt":"assert response.status_code == 201"}
-- Evidence: {"file":"taskboard/tests/test_api.py","line":176,"excerpt":"assert filtered.status_code == 200"}
-### explicit UTC-offset timestamps — PASS
-- Test file: taskboard/tests/test_api.py
-- Verify result: passed
-- Notes: The test drives the API/client and makes concrete assertions for this scenario.
-- Evidence: {"file":"taskboard/tests/test_api.py","line":50,"excerpt":"assert first.status_code == 201"}
-- Evidence: {"file":"taskboard/tests/test_api.py","line":52,"excerpt":"assert project[\"name\"] == \"Alpha\""}
+- Verify result: pytest passed
+- Notes: API assertions cover health, project CRUD, response/error shapes, statuses, content types, malformed paths, and isolated databases.
+
+### phase-2 — PASS
+- Test file: taskboard/tests/test_ui_content.py
+- Verify result: pytest passed
+- Notes: Content assertions cover required controls, Kanban columns, filters, error/empty regions, static assets, API interactions, and safe text rendering.
+
+### phase-3 — FAIL
+- Test file: taskboard/playwright/taskboard.spec.ts
+- Verify result: Playwright failed before discovery: No tests found.
+- Notes: SPEC and TEST_PLAN require the canonical `taskboard/playwright/` suite, but `playwright.config.ts` sets `testDir: './e2e'`; the exact phase command therefore discovers zero tests.
 
 ## Overall assessment
-The repaired test_api.py covers each scenario from the prior finding with real assertions, and the configured phase verification is green.
+Failure. Reopen the Playwright implementation bead and repair the canonical configuration so the required command discovers and runs taskboard/playwright/taskboard.spec.ts, then rerun the complete phase verification.
