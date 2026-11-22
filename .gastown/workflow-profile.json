@@ -149,7 +149,8 @@
     "completed_phase_ids": [
       "phase-1-core",
       "phase-1-app",
-      "phase-2"
+      "phase-2",
+      "phase-3"
     ],
     "spec_summary": "",
     "min_architecture_bytes": 3200,
