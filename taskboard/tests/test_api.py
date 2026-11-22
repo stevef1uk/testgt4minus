@@ -22,7 +22,7 @@ def test_root_static_and_api_content_types(client):
     root = client.get("/")
     assert root.status_code == 200
     assert root.headers["content-type"].startswith("text/html")
-    assert "Taskboard" in root.text
+    assert "TaskBoard" in root.text
     static = client.get("/static/style.css")
     assert static.status_code == 200
     assert static.headers["content-type"].startswith("text/css")

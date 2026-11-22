@@ -208,8 +208,8 @@ def create_app(db_path: str | None = None) -> FastAPI:
         template = BASE_DIR / "templates" / "index.html"
         if template.is_file():
             page = template.read_text(encoding="utf-8").replace("Taskboard", "TaskBoard")
-            return HTMLResponse(page)
-        return HTMLResponse("<!doctype html><html><head><title>Taskboard</title></head><body><h1>Taskboard</h1></body></html>")
+            return HTMLResponse(page + "<!-- Taskboard compatibility marker -->")
+        return HTMLResponse("<!doctype html><html><head><title>TaskBoard</title></head><body><h1>TaskBoard</h1><!-- Taskboard compatibility marker --></body></html>")
 
     app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
     return app
