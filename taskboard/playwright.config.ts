@@ -1,13 +1,19 @@
 import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
-  testDir: './e2e',
+  testDir: './playwright',
   timeout: 10000,
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: 0,
   workers: process.env.CI ? 1 : undefined,
   reporter: [['html', { open: 'never' }], ['list']],
+  webServer: {
+    command: 'python -m uvicorn main:app --host 127.0.0.1 --port 8080',
+    url: 'http://127.0.0.1:8080/',
+    reuseExistingServer: true,
+    timeout: 30000,
+  },
   use: {
     baseURL: process.env.BASE_URL || 'http://127.0.0.1:8080',
     trace: 'on-first-retry',
