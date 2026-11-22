@@ -19,19 +19,20 @@ Assertions:
 - Combined filters are an AND query, updates cannot reassign projects, and cascade deletion removes all child tasks.
 
 ### phase-1-app
-Requirement: The FastAPI app exposes the specified health, project, task, root, and static routes with contract statuses, decoded JSON shapes, error objects, validation behavior, content types, and isolated temporary-database state.
+Requirement: The FastAPI app exposes the specified health, project, root, and static routes with contract statuses, decoded JSON shapes, error objects, content types, and isolated temporary-database state.
 Level: integration
 Test file: taskboard/tests/test_api.py
-Bead ID: tm-ssd
+Bead ID: tm-rmz
 Phase: phase-1-app
 Scenarios:
-- Exercise health, project CRUD, task create/list/patch/delete, root, and both static asset routes using the temporary-database fixture.
-- Check empty arrays, ID ordering, task defaults, filters composed with AND, 204 empty delete bodies, and exact health JSON.
-- Submit empty, overlong, null, and invalid enum fields; empty PATCH; missing resources; missing parent projects; and malformed integer paths.
-- Verify valid writes round-trip and invalid requests do not create or partially update records; confirm the runtime database is not touched.
+- Exercise the health endpoint and verify project create, list, retrieve, update, and delete behavior using the temporary-database fixture.
+- Fetch the root page and both static asset routes, including successful responses and their documented HTML, JavaScript, and CSS content types.
+- Check project response shapes, empty project-list behavior, missing-project errors, and malformed integer project paths.
+- Verify valid project writes round-trip, invalid project requests do not persist changes, and the runtime database is not touched.
 Assertions:
-- Success status, decoded JSON keys/types/values, and HTML/JavaScript/CSS media types match SPEC; application errors are {"error": ...} with 400/404 and malformed integer paths retain 422.
-- Boundary validation and filter behavior match the contract, deletes return no body, and temporary data is isolated from taskboard.db.
+- Health returns status 200 with decoded JSON {"status": "ok"}; project responses and lists have the documented keys, types, and values.
+- Project CRUD uses the specified success and error statuses and {"error": ...} objects; malformed integer paths retain 422.
+- The root and static routes return successful responses with the specified content types and nonempty bodies, and temporary data is isolated from taskboard.db.
 
 ### phase-2
 Requirement: The delivered TaskBoard page provides the specified project/task forms, project selection, task editing/deletion, three Kanban columns, move-forward behavior, empty/error states, and safe visible rendering.
