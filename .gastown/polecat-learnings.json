@@ -32,14 +32,6 @@
     },
     {
       "stack": "python",
-      "rule": "Validation tests must assert the API's actual Pydantic error contract while still covering exact status, body, and persistence isolation.",
-      "source": "agent",
-      "bead_path": "taskboard/tests/test_api.py",
-      "hits": 1,
-      "updated_at": "2026-11-21T21:20:53Z"
-    },
-    {
-      "stack": "python",
       "rule": "Test review lesson: Repair implementation beads: tm-ssd",
       "source": "qa_rework",
       "hits": 1,
@@ -59,6 +51,13 @@
       "source": "qa_rework",
       "hits": 2,
       "updated_at": "2026-11-22T16:35:38Z"
+    },
+    {
+      "stack": "python",
+      "rule": "QA lesson: {\"summary\":\"Stage 1 failed: active-phase API contract/wiring defect",
+      "source": "qa_rework",
+      "hits": 1,
+      "updated_at": "2026-11-22T17:01:19Z"
     }
   ]
 }

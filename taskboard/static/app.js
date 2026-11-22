@@ -11,11 +11,9 @@
     area.hidden = !message;
   }
 
-  async function api(path, options = {}) {
-    const response = await fetch(path, {
-      ...options,
-      headers: { "Content-Type": "application/json", ...(options.headers || {}) },
-    });
+  const jsonHeaders = () => ({ "Content-Type": "application/json" });
+
+  async function readBody(response) {
     if (!response.ok) {
       let message = `Request failed (${response.status})`;
       try {
@@ -68,7 +66,7 @@
     empty.hidden = true;
 
     state.tasks.forEach((task) => {
-      const status = task.status === "in_progress" ? "doing" : task.status;
+      const status = task.status;
       const card = document.createElement("article");
       card.className = "task-card";
       card.dataset.taskId = String(task.id);
@@ -112,7 +110,7 @@
   }
 
   async function loadProjects() {
-    state.projects = await api("/api/projects");
+    state.projects = await readBody(await fetch("/api/projects"));
     renderProjects();
     await loadTasks();
   }
@@ -129,17 +127,17 @@
     if (status !== "all") query.set("status", status);
     if (priority !== "all") query.set("priority", priority);
     const suffix = query.toString() ? `?${query}` : "";
-    state.tasks = await api(`/api/projects/${state.projectId}/tasks${suffix}`);
+    state.tasks = await readBody(await fetch(`/api/projects/${state.projectId}/tasks${suffix}`));
     renderTasks();
   }
 
   byId("project-form").addEventListener("submit", async (event) => {
     event.preventDefault();
     try {
-      const project = await api("/api/projects", {
-        method: "POST",
+      const project = await readBody(await fetch("/api/projects", {
+        method: "POST", headers: jsonHeaders(),
         body: JSON.stringify({ name: byId("project-name").value }),
-      });
+      }));
       byId("project-name").value = "";
       state.projectId = project.id;
       showError("");
@@ -163,14 +161,14 @@
     event.preventDefault();
     if (!state.projectId) return;
     try {
-      await api(`/api/projects/${state.projectId}/tasks`, {
-        method: "POST",
+      await readBody(await fetch(`/api/projects/${state.projectId}/tasks`, {
+        method: "POST", headers: jsonHeaders(),
         body: JSON.stringify({
           title: byId("task-title").value,
           description: byId("task-description").value,
           priority: byId("task-priority").value,
         }),
-      });
+      }));
       event.target.reset();
       showError("");
       await loadTasks();
@@ -189,7 +187,7 @@
     const project = state.projects.find((item) => item.id === state.projectId);
     if (!project || !window.confirm(`Delete project "${project.name}"?`)) return;
     try {
-      await api(`/api/projects/${project.id}`, { method: "DELETE" });
+      await readBody(await fetch(`/api/projects/${project.id}`, { method: "DELETE" }));
       state.projectId = null;
       await loadProjects();
     } catch (error) {
@@ -209,15 +207,14 @@
 
     try {
       if (button.dataset.action === "delete") {
-        await api(`/api/tasks/${task.id}`, { method: "DELETE" });
+        await readBody(await fetch(`/api/tasks/${task.id}`, { method: "DELETE" }));
       } else if (button.dataset.action === "move") {
-        const next = { todo: "doing", in_progress: "done", doing: "done" }[
-          task.status
-        ];
-        await api(`/api/tasks/${task.id}`, {
-          method: "PATCH",
+        const next = { todo: "doing", doing: "done" }[task.status];
+        const moveResponse = await fetch(`/api/tasks/${task.id}`, {
+          method: "PATCH", headers: jsonHeaders(),
           body: JSON.stringify({ status: next }),
         });
+        await readBody(moveResponse);
       } else if (button.dataset.action === "edit") {
         const title = window.prompt("Task title", task.title);
         if (title === null) return;
@@ -226,14 +223,15 @@
           task.description || ""
         );
         if (description === null) return;
-        await api(`/api/tasks/${task.id}`, {
-          method: "PATCH",
+        const editResponse = await fetch(`/api/tasks/${task.id}`, {
+          method: "PATCH", headers: jsonHeaders(),
           body: JSON.stringify({
             title,
             description,
             priority: task.priority,
           }),
         });
+        await readBody(editResponse);
       }
       await loadTasks();
     } catch (error) {
