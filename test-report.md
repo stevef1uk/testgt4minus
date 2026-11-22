@@ -1,18 +1,17 @@
-# Test Review — phase-1 active phases
+# Test Review — phase-1-app / phase-1-core
 
 ## Summary
-Phase verification was executed with `cd taskboard && python -m pytest -q tests` and did not provide a green verification result. The active-phase review therefore fails pending Polecat repair and re-verification.
+All in-scope planned tests are present and substantive; phase verify passed.
 
 ## Per-requirement results
-### phase-1-core — FAIL
+### phase-1-core — PASS
 - Test file: taskboard/tests/test_repository.py
-- Verify result: failed/not green
-- Notes: The planned repository integration coverage cannot be approved until the configured pytest verification is green.
-
-### phase-1-app — FAIL
+- Verify result: passed
+- Notes: Real assertions exercise the planned behavior.
+### phase-1-app — PASS
 - Test file: taskboard/tests/test_api.py
-- Verify result: failed/not green
-- Notes: API coverage cannot be approved while the phase verification is not green.
+- Verify result: passed
+- Notes: Real assertions exercise the planned behavior.
 
 ## Overall assessment
-Failure. Reopen the owning active-phase beads and repair or complete the planned tests, then rerun the exact configured command from the taskboard directory.
+Every active-phase requirement is covered by an existing substantive test, and `cd taskboard && python -m pytest -q tests` passed.
