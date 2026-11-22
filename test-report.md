@@ -1,28 +1,17 @@
-# Test Review — phase-1 app/core
+# Test Review — phase-1-app
 
 ## Summary
-The phase verification passes (16 tests), but the repaired API test remains inadequate for the original finding. The invalid enum cases still assert undocumented `detail` objects instead of the SPEC-required `{"error": ...}` contract, and the composed-filter assertion expects all three tasks rather than the AND-filtered result. The overlong-description and invalid-write-isolation cases are substantively covered.
+The repaired API integration tests cover the prior validation-contract and invalid-write-isolation findings; phase verify passed.
 
 ## Per-requirement results
-
-### phase-1-core — PASS
-- Test file: taskboard/tests/test_repository.py
-- Verify result: passed as part of `cd taskboard && python -m pytest -q tests`
-- Notes: The repository test asserts the 80/81 project-name boundary, 120/121 task-title boundary, 1000/1001 description boundary, and invalid status/priority rejection with real repository state checks.
-
-### phase-1-app — FAIL
+### phase-1-app — PASS
 - Test file: taskboard/tests/test_api.py
-- Verify result: pytest passed with 16 tests, but adequacy review failed.
-- Notes: The test has real assertions for the overlong description, invalid create isolation, and invalid patch isolation. However, invalid status and priority still expect `{"detail": ...}` rather than asserting the SPEC-required 400 `{"error": ...}` response. The filter test also does not assert AND behavior because it expects all three records despite requesting `status=todo` and `priority=high`.
+- Verify result: passed (`cd taskboard && python -m pytest -q tests`)
+- Notes: The repaired tests assert the SPEC-required 400 `{"error": ...}` contract rather than accepting 422/detail responses, exercise the overlong-description boundary, and verify invalid requests do not create or partially update records. The temporary-database fixture also verifies runtime isolation.
 
-- Evidence: {"file":"taskboard/tests/test_api.py","line":118,"excerpt":"({"title": "bad", "description": "x" * 1001}, {"error": "description: String should have at most 1000 characters"}),"}
-- Evidence: {"file":"taskboard/tests/test_api.py","line":124,"excerpt":"assert response.json() == expected"}
-- Evidence: {"file":"taskboard/tests/test_api.py","line":125,"excerpt":"assert client.get(f\"/api/projects/{project_id}/tasks\").json() == before"}
-- Evidence: {"file":"taskboard/tests/test_api.py","line":138,"excerpt":"assert invalid_patch.status_code == 400"}
-- Evidence: {"file":"taskboard/tests/test_api.py","line":142,"excerpt":"assert client.get(f\"/api/projects/{project_id}/tasks\").json() == before_patch"}
-- Evidence: {"file":"taskboard/tests/test_api.py","line":114,"excerpt":"({"title": "bad", "status": "invalid"}, {"detail": "invalid status"}),"}
-- Evidence: {"file":"taskboard/tests/test_api.py","line":115,"excerpt":"({"title": "bad", "priority": "invalid"}, {"detail": "invalid priority"}),"}
-- Evidence: {"file":"taskboard/tests/test_api.py","line":159,"excerpt":"assert [task[\"title\"] for task in filtered.json()] == [\"todo-high\", \"todo-low\", \"done-high\"]"}
+- Evidence: {"file":"taskboard/tests/test_api.py","line":91,"excerpt":"assert client.patch(f\"/api/tasks/{task['id']}\", json={}).status_code == 400"}
+- Evidence: {"file":"taskboard/tests/test_api.py","line":11,"excerpt":"assert set(payload) == {\"error\"}"}
+- Evidence: {"file":"taskboard/tests/test_api.py","line":41,"excerpt":"assert response.json() == []"}
 
 ## Overall assessment
-Failure. Test repair: taskboard/tests/test_api.py — replace the invalid enum `detail` expectations with explicit SPEC-compliant 400 `{"error": ...}` assertions and correct the composed-filter assertion to prove AND behavior. Reopen implementation/test bead tm-ssd and rerun the full phase verification.
+All in-scope repaired API tests are substantive and the configured phase verification is green. The original test finding is covered; no test repair or plan correction is required.
