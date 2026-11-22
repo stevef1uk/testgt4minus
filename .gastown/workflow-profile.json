@@ -149,8 +149,7 @@
     "completed_phase_ids": [
       "phase-1-core",
       "phase-1-app",
-      "phase-2",
-      "phase-3"
+      "phase-2"
     ],
     "spec_summary": "",
     "min_architecture_bytes": 3200,
@@ -163,6 +162,6 @@
     "python_venv_dir": "",
     "dev_server_port": 8080
   },
-  "test_plan_reviewed": true,
+  "test_plan_reviewed": false,
   "test_plan_frozen": true
 }
