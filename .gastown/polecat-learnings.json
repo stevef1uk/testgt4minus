@@ -32,13 +32,6 @@
     },
     {
       "stack": "python",
-      "rule": "Test review lesson: Repair implementation beads: tm-ssd",
-      "source": "qa_rework",
-      "hits": 1,
-      "updated_at": "2026-11-21T21:21:59Z"
-    },
-    {
-      "stack": "python",
       "rule": "Avoid in test_api.py: E AssertionError: assert {'detail': 'p...ct not found'} == {'error': 'project not found'}",
       "source": "verify_fix",
       "bead_path": "taskboard/tests/test_api.py",
@@ -58,6 +51,13 @@
       "source": "qa_rework",
       "hits": 1,
       "updated_at": "2026-11-22T17:01:19Z"
+    },
+    {
+      "stack": "python",
+      "rule": "Test review lesson: Repair implementation beads: tm-edl",
+      "source": "qa_rework",
+      "hits": 1,
+      "updated_at": "2026-11-22T17:13:14Z"
     }
   ]
 }

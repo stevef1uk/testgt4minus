@@ -122,6 +122,45 @@ def test_task_filters_compose_and_partial_update_preserves_values(repositories):
     assert tasks.update_task(999, {"title": "missing"}) is None
 
 
+def test_partial_updates_patch_each_field_independently(repositories):
+ """Patch description, priority, status, title one at a time; omitted fields stay."""
+ projects, tasks = repositories
+ project = projects.create_project("Patches")
+ task = tasks.create_task(
+ project["id"],
+ "Original",
+ description="Keep me",
+ status="doing",
+ priority="high",
+ )
+
+ patched = tasks.update_task(task["id"], {"description": "Rewritten"})
+ assert patched["title"] == "Original"
+ assert patched["description"] == "Rewritten"
+ assert patched["status"] == "doing"
+ assert patched["priority"] == "high"
+
+ patched = tasks.update_task(task["id"], {"priority": "low"})
+ assert patched["title"] == "Original"
+ assert patched["description"] == "Rewritten"
+ assert patched["status"] == "doing"
+ assert patched["priority"] == "low"
+
+ patched = tasks.update_task(task["id"], {"status": "done"})
+ assert patched["title"] == "Original"
+ assert patched["description"] == "Rewritten"
+ assert patched["status"] == "done"
+ assert patched["priority"] == "low"
+
+ patched = tasks.update_task(task["id"], {"title": "Renamed"})
+ assert patched["title"] == "Renamed"
+ assert patched["description"] == "Rewritten"
+ assert patched["status"] == "done"
+ assert patched["priority"] == "low"
+
+ assert tasks.list_tasks(project["id"], status="done", priority="low") == [patched]
+
+
 def test_separate_connections_persist_parameterized_values(repositories):
     projects, tasks = repositories
     project = projects.create_project("O'Reilly; DROP TABLE projects;")
