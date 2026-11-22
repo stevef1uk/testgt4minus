@@ -1,55 +1,28 @@
-# Test Review — Phase 1 (phase-1-core, phase-1-app)
+# Test Review — phase-1-core
 
 ## Summary
-Phase verify `cd taskboard && python -m pytest -q tests` PASSED (16 passed, 0 failed).
-Both planned active-phase test files exist with substantive (non-stub) assertions.
-However, a live probe against the delivered app shows production behavior violating
-SPEC sections 4 and 6 in cases the green tests do not cover, and several planned
-assertions are missing or weak. Outcome: failure (tests weak/missing + production
-violations found by probe).
+Phase verification is green, but the repaired coverage is incomplete. The repository partial-update repair is substantive; the requested API scenarios remain untested, and the implementation findings remain reproducible from the reviewed source.
 
 ## Per-requirement results
 
-### phase-1-core (bead tm-ns3, test_repository.py) — PASS with one gap
-- Test file: taskboard/tests/test_repository.py (exists, real assertions)
-- Verify result: passed
-- Notes: asserts idempotent schema, FK cascade, 80/120/1000 character boundaries with
-  over-limit rejection, unknown status and priority ValueError, trim (" Alpha " becomes
-  "Alpha"), +00:00 timestamps, ascending IDs, combined AND filter, cascade delete, and
-  parameterized writes. Gap vs plan: partial-update test patches only the title field;
-  the plan scenario "Patch each supported task field while preserving omitted fields"
-  requires patching description, priority, and status too.
+### phase-1-core — PASS
+- Test file: `taskboard/tests/test_repository.py`
+- Verify result: `cd taskboard && python -m pytest -q tests/test_repository.py` passed.
+- The repository test independently patches description, priority, status, and title, asserting each changed value and asserting omitted fields remain unchanged after every patch.
+- Evidence: {"file":"taskboard/tests/test_repository.py","line":139,"excerpt":"assert patched[\"description\"] == \"Rewritten\""}
+- Evidence: {"file":"taskboard/tests/test_repository.py","line":146,"excerpt":"assert patched[\"priority\"] == \"low\""}
+- Evidence: {"file":"taskboard/tests/test_repository.py","line":152,"excerpt":"assert patched[\"status\"] == \"done\""}
 
-### phase-1-app (bead tm-rmz, test_api.py) — FAIL (gaps below; verify itself passed)
-1. Whitespace-only project name: POST with name of three spaces returns 201 and
-   persists an empty name (probe-verified). Violates SPEC section 4 "Trim surrounding
-   whitespace for project name... Reject empty values after trim." No test covers this;
-   current tests only post a truly empty name (400 via pydantic). Production fix needed
-   in main.py create_project: validate after strip and return the 400 error object.
-2. API timestamps are naive: probe returned created_at and updated_at as
-   "2026-11-22 16:31:59" — no "T", no UTC offset. Violates SPEC section 4 "All
-   timestamps have explicit UTC timezone (Z or +00:00)." test_api.py assert_timestamp
-   (lines 14-16) only calls datetime.fromisoformat, which accepts naive strings —
-   weaker than test_repository.py's endswith("+00:00") assertion. Root cause: main.py
-   defines its own DDL and SQL with CURRENT_TIMESTAMP defaults instead of using
-   db.py and repository.py (also misses busy_timeout 5000). Bead tm-lro owns main.py.
-3. Plan row tm-rmz asserts the root HTML contains the TaskBoard heading, project
-   creation form controls, and empty-state container. test_root_static_and_api_content_types
-   only checks "TaskBoard" in root.text — the handler's placeholder fallback would also
-   pass. No assertion covers the form controls or empty-state container.
-4. Plan scenario "missing-project delete errors": DELETE of a missing project id (404
-   with error object) is not tested anywhere in test_api.py.
+### phase-1-app — FAIL
+- Test file: `taskboard/tests/test_api.py`
+- The file has real API assertions and the full pytest suite is green, but it does not cover the requested repaired scenarios: root form controls and empty-state container, DELETE of a missing project with its `{"error": ...}` body, whitespace-only project names, or explicit UTC-offset timestamps.
+- The existing assertion at the missing-project task-list route is not coverage for DELETE `/api/projects/{project_id}`.
+- No valid evidence line can be supplied for the missing API scenarios because the required assertions are absent.
 
-Deferred (out of scope): phase-2 test_ui_content.py, phase-3 Playwright suite.
+### implementation repair — FAIL
+- Source file: `taskboard/main.py`
+- Project creation strips the name only at insertion, after Pydantic's `min_length=1` check, so whitespace-only names can pass validation and be persisted.
+- The database schema in this file uses `CURRENT_TIMESTAMP`, which produces a naive timestamp, rather than the explicit UTC-offset timestamp required by SPEC §4. The API tests do not currently detect either issue.
 
 ## Overall assessment
-FAIL — rewind Polecat to implementation. Reopen beads:
-- tm-lro (main.py): reject empty-after-trim project names with 400 error object; emit
-  explicit-UTC ISO-8601 timestamps by delegating to db.py and repository.py; add
-  busy_timeout 5000.
-- tm-rmz (test_api.py): assert UTC offsets on API timestamps; add whitespace-only-name
-  400 plus non-persistence check; assert root HTML form controls and empty-state
-  container; add missing-project delete 404 test.
-- tm-ns3 (test_repository.py): extend partial-update test to patch description,
-  priority, and status with omitted fields preserved.
-Repository boundary tests in test_repository.py themselves passed.
+FAIL. Reopen `tm-rmz` for `taskboard/tests/test_api.py` and add independent assertions for all four missing scenarios. Reopen `tm-lro` for `taskboard/main.py` and repair whitespace-only project-name rejection and explicit UTC-offset timestamps. Reopen `tm-edl` only if the repository partial-update repair is not retained; the current repository assertions above cover that finding. Re-run the phase verify and the full pytest suite after repair.
