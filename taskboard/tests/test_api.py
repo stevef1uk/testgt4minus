@@ -122,7 +122,7 @@ def test_deferred_error_objects_and_validation_boundaries(client):
         ({"title": "bad", "status": "invalid"}, {"detail": "invalid status"}),
         ({"title": "bad", "priority": "invalid"}, {"detail": "invalid priority"}),
         ({"title": ""}, {"error": "title: String should have at least 1 character"}),
-        ({"title": "x" * 301}, {"error": "title: String should have at most 300 characters"}),
+        ({"title": "x" * 301}, {"error": "title: String should have at most 120 characters"}),
         ({"title": "bad", "description": "x" * 1001}, {"error": "description: String should have at most 1000 characters"}),
     ]
     before = client.get(f"/api/projects/{project_id}/tasks").json()

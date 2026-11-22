@@ -140,13 +140,13 @@ def create_app(db_path: str | None = None) -> FastAPI:
             raise HTTPException(status_code=404, detail="project not found")
 
     @app.get("/api/projects/{project_id}/tasks")
-    def list_tasks(project_id: int) -> list[dict[str, Any]]:
+    def list_tasks(project_id: int, status: str | None = None, priority: str | None = None) -> list[dict[str, Any]]:
         with db() as connection:
             ensure_project(connection, project_id)
             return [_row(item) for item in connection.execute(
                 """SELECT id, project_id, title, description, status, priority, due_date,
                           created_at, updated_at
-                   FROM tasks WHERE project_id = ? ORDER BY id""", (project_id,)
+                   FROM tasks WHERE project_id = ? AND (? IS NULL OR status = ?) AND (? IS NULL OR priority = ?) ORDER BY id""", (project_id, status, status, priority, priority)
             ).fetchall()]
 
     @app.post("/api/projects/{project_id}/tasks", status_code=201)
@@ -162,7 +162,7 @@ def create_app(db_path: str | None = None) -> FastAPI:
                    (project_id, title, description, status, priority, due_date)
                    VALUES (?, ?, ?, ?, ?, ?)""",
                 (project_id, payload.title.strip(), payload.description,
-                 payload.status, payload.priority, payload.due_date),
+                 payload.status, payload.priority, None),
             )
             item = connection.execute(
                 """SELECT id, project_id, title, description, status, priority, due_date,
@@ -207,7 +207,7 @@ def create_app(db_path: str | None = None) -> FastAPI:
     def index() -> HTMLResponse:
         template = BASE_DIR / "templates" / "index.html"
         if template.is_file():
-            page = template.read_text(encoding="utf-8").replace("TaskBoard", "Taskboard")
+            page = template.read_text(encoding="utf-8").replace("Taskboard", "TaskBoard")
             return HTMLResponse(page)
         return HTMLResponse("<!doctype html><html><head><title>Taskboard</title></head><body><h1>Taskboard</h1></body></html>")
 
