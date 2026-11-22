@@ -15,7 +15,7 @@ def assert_error_response(response, expected_status: int = 400) -> None:
 
 def assert_timestamp(value: str) -> None:
     assert isinstance(value, str)
-    datetime.fromisoformat(value)
+    assert datetime.fromisoformat(value).utcoffset() is not None
 
 
 def test_root_static_and_api_content_types(client):
@@ -23,6 +23,10 @@ def test_root_static_and_api_content_types(client):
     assert root.status_code == 200
     assert root.headers["content-type"].startswith("text/html")
     assert "TaskBoard" in root.text
+    assert '<form id="project-form">' in root.text
+    assert '<input id="project-name"' in root.text
+    assert '<button type="submit">Add project</button>' in root.text
+    assert '<p id="projects-empty" class="empty-state"' in root.text
     static = client.get("/static/style.css")
     assert static.status_code == 200
     assert static.headers["content-type"].startswith("text/css")
@@ -102,6 +106,7 @@ def test_partial_patch_preserves_omitted_values(client):
     ("path", "payload", "status", "body"),
     [
         ("/api/projects", {"name": ""}, 400, {"error": "name: String should have at least 1 character"}),
+        ("/api/projects", {"name": "   "}, 400, {"error": "name: String should have at least 1 character"}),
         ("/api/projects/999/tasks", {"title": "orphan"}, 404, {"error": "project not found"}),
         ("/api/projects/999/tasks", {"title": ""}, 400, {"error": "title: String should have at least 1 character"}),
     ],
@@ -173,6 +178,10 @@ def test_composed_filters_and_project_delete_cascade(client):
     deleted = client.delete(f"/api/projects/{project_id}")
     assert deleted.status_code == 204
     assert deleted.content == b""
+    repeat_delete = client.delete(f"/api/projects/{project_id}")
+    assert repeat_delete.status_code == 404
+    assert repeat_delete.headers["content-type"].startswith("application/json")
+    assert repeat_delete.json() == {"error": "project not found"}
     listed = client.get("/api/projects").json()
     assert all(item["id"] != project_id for item in listed)
     remaining = client.get(f"/api/projects/{project_id}/tasks")
