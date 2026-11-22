@@ -145,10 +145,11 @@
       }
     ],
     "explicit_delivery_contract": true,
-    "active_phase_id": "phase-2",
+    "active_phase_id": "phase-3",
     "completed_phase_ids": [
       "phase-1-core",
-      "phase-1-app"
+      "phase-1-app",
+      "phase-2"
     ],
     "spec_summary": "",
     "min_architecture_bytes": 3200,
