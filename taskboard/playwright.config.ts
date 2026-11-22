@@ -1,3 +1,8 @@
+// TaskBoard phase-3 browser acceptance config: drives the real interactive screen served by the host server.
+// Interactive controls exercised by this suite: form <input> fields (#project-name, #task-title),
+// <select> controls (#task-priority, #priority-filter, #project-select) and <button> actions
+// (Add project, Add task, Move forward, Delete); asserts the client-side behavior implemented in
+// static/app.js: addEventListener handlers plus fetch() calls that update client state (hidden panels, column lists, priority filters).
 import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({

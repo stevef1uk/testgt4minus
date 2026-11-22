@@ -32,13 +32,6 @@
     },
     {
       "stack": "python",
-      "rule": "Test review lesson: Repair implementation beads: tm-edl",
-      "source": "qa_rework",
-      "hits": 1,
-      "updated_at": "2026-11-22T17:13:14Z"
-    },
-    {
-      "stack": "python",
       "rule": "Test review lesson: Repair implementation beads: tm-yo8",
       "source": "qa_rework",
       "bead_path": "taskboard/main.py",
@@ -59,6 +52,13 @@
       "bead_path": "taskboard/tests/test_ui_content.py",
       "hits": 1,
       "updated_at": "2026-11-22T19:45:18Z"
+    },
+    {
+      "stack": "python",
+      "rule": "QA lesson: {\"summary\":\"Verification (pytest + Playwright) passes, but the automated UI-interactivity gate rejected taskboard/playwright.c...",
+      "source": "qa_rework",
+      "hits": 1,
+      "updated_at": "2026-11-22T22:04:36Z"
     }
   ]
 }

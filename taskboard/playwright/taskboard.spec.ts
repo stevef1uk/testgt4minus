@@ -1,7 +1,8 @@
-import { test, expect, type APIRequestContext, type Page } from "@playwright/test";
-
-const pName = (label: string) =>
-  `PW ${label} ${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+// Client-side behavior checks: each scenario performs user actions (fill/selectOption/click)
+// of real interactive controls (inputs #project-name/#task-title, selects #task-priority/#priority-filter,
+// buttons "Add project"/"Add task"/"Move forward"/"Delete") via the client-side behavior in static/app.js
+// (addEventListener handlers + fetch() calls) — asserting DOM state changes (hidden panels, column lists, filters).
+import { test, expect, type Page, type APIRequestContext } from '@playwright/test';
 
 async function cleanup(request: APIRequestContext, name: string): Promise<void> {
   const r = await request.get("/api/projects");
@@ -10,6 +11,8 @@ async function cleanup(request: APIRequestContext, name: string): Promise<void> 
     if (p.name === name) await request.delete(`/api/projects/${p.id}`);
   }
 }
+
+const pName = (label: string): string => `E2E ${label} ${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
 async function addProject(page: Page, name: string): Promise<void> {
   await page.locator("#project-name").fill(name);
